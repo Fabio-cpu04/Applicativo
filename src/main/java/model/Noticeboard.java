@@ -1,5 +1,6 @@
 package model;
 import java.lang.String;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.time.LocalDateTime;
@@ -23,95 +24,45 @@ public class Noticeboard {
     public void setDescription(String description) { this.description = description; }
 
     //ToDo methods
-    public int getToDoNumber() { return todos.size(); }
+    public int getToDoCount() { return todos.size(); }
     public int getToDoIndex(String title) { return todos.indexOf(getToDo(title)); }
 
-    public ToDo[] getToDos() { return this.todos.toArray(new ToDo[this.todos.size()]); }
+    public ArrayList<ToDo> getToDos() { return this.todos; }
     public ToDo getToDo(String title){
         for(ToDo todo : this.todos)
-            if(todo.getTitle().equals(title))
+            if(todo != null && todo.getTitle().equals(title))
                 return todo;
 
         return null;
     }
-    public ToDo getToDo(int index){
-        int boardSize = this.getToDoNumber();
-        if(boardSize == 0 || index < 0 || index >= boardSize)
+    public ToDo getToDo(int index){;
+        if(index < 0 || index >= this.getToDoCount())
             return null;
         else
             return todos.get(index);
     }
 
     public int addToDo(ToDo todo){
-        if(todo == null || this.getToDo(todo.getTitle()) != null)
+        if(todo == null)
             return -1;
+        if(this.getToDo(todo.getTitle()) != null) //ToDo exists already
+            return -2;
 
-        this.todos.add(todo);
+        todos.add(todo);
         return 0;
     }
-    public int addToDo(String title, String description, LocalDateTime expiration, String link, String activityURL,  String imageURL, User owner, String color){
-        if(this.getToDo(title) != null)
-            return -1;
-
-        ToDo todo = new ToDo(title, description, expiration, link, activityURL, imageURL, owner, color);
-
-        return this.addToDo(todo);
-    }
-    public int modifyToDo(String title, String newTitle, String description, LocalDateTime expiration, String link, String activityURL, String imageURL, String color){
+    public int deleteToDo(String title, User user){
         ToDo todo = this.getToDo(title);
         if(todo == null)
             return -1;
 
-        todo.setTitle(newTitle);
-        todo.setDescription(description);
-        todo.setExpiryDate(expiration);
-        todo.setLink(link);
-        todo.setActivityURL(activityURL);
-        todo.setImageURL(imageURL);
-        todo.setBackGroundColor(color);
-        return 0;
-    }
-    public int deleteToDo(String title){
-        ToDo todo = this.getToDo(title);
-        if(todo == null)
-            return -1;
+        if(user == todo.getOwner()){
+            ArrayList<User> shared = todo.getSharedUsers();
+            while(!shared.isEmpty())
+                todo.removeSharedUser(user);
+        }
 
-        for (User u : todo.getSharedUsers())
-            unshareToDo(todo, u);
-
-        this.todos.remove(todo);
-        return 0;
-    }
-    public int changeToDoOrder(String todoTitle, int newIndex){
-        if(getToDo(todoTitle) == null || newIndex < 0 || newIndex > this.getToDoNumber())
-            return -1;
-
-        int evictedIndex = this.getToDoIndex(todoTitle);
-        Collections.swap(this.todos, newIndex, evictedIndex);
-        return 0;
-    }
-
-    //ToDo sharing methods
-    int shareToDo(ToDo todo, User user){
-        if(user == todo.getOwner())
-            return -1;
-
-        todo.addSharedUser(user);
-        user.boards.putIfAbsent(this.title, new Noticeboard(this.title, this.description));
-
-        if(user.getNoticeboard(this.title).getToDo(todo.getTitle()) == null)
-            user.getNoticeboard(this.title).addToDo(todo);
-        return 0;
-    }
-    int unshareToDo(ToDo todo, User user){
-        if(user.getNoticeboard(this.title).getToDo(todo.getTitle()) == null)
-            return -1;
-
-        todo.removeSharedUser(user);
-        user.getNoticeboard(this.title).deleteToDo(todo.getTitle());
-
-        if(user.getNoticeboard(this.title).getToDoNumber() == 0)
-            user.deleteNoticeboard(this.title);
+        todos.remove(todo);
         return 0;
     }
 
@@ -122,12 +73,12 @@ public class Noticeboard {
         sb.append("Title: ").append(this.title).append(", ");
         sb.append("Description: ").append(this.description).append(", ");
         sb.append("ToDos: [");
-        if(this.todos != null) {
-            for (int i = 0; i < this.todos.size(); i++) {
-                if (i != this.todos.size() - 1)
-                    sb.append(this.todos.get(i).getTitle()).append(", ");
+        if(todos != null) {
+            for (int i = 0; i < todos.size(); i++) {
+                if (i != todos.size() - 1)
+                    sb.append(todos.get(i).getTitle()).append(", ");
                 else
-                    sb.append(this.todos.get(i).getTitle());
+                    sb.append(todos.get(i).getTitle());
             }
         }
         sb.append("]");

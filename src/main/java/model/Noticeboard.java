@@ -1,69 +1,120 @@
 package model;
-import java.lang.String;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.time.LocalDateTime;
 
+import java.lang.String;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
+
+/**
+ * <p>A Noticeboard in the model, identified by its title.</p>
+ * <p>Every user has a collection of displayed {@link ToDo}.</p>
+ * <p>The class provides methods to retrieve, add and remove the displayed ToDos.</p>
+ */
 public class Noticeboard {
     private String title;
     private String description;
-    private ArrayList<ToDo> todos;
+    private final ArrayList<ToDo> todos;
 
+    /**
+     * <p>Instantiates a new Noticeboard with no todos.</p>
+     * @param title the title
+     * @param description the description
+     *
+     * @throws IllegalArgumentException if {@code title} is {@code null} or blank
+     */
     public Noticeboard(String title, String description) {
+        if(title == null || title.isBlank())
+            throw new IllegalArgumentException("Noticeboard title cannot be null or blank");
+
         this.title = title;
         this.description = description;
         this.todos = new ArrayList<ToDo>();
     }
 
     //Getter & Setter methods
+    /**
+     * <p>Gets title.</p>
+     * @return the title
+     */
     public String getTitle() { return title; }
+
+    /**
+     * <p>Gets description.</p>
+     * @return the description
+     */
     public String getDescription() { return description; }
 
-    public void setTitle(String title) { this.title = title; }
+    /**
+     * <p>Sets title.</p>
+     * @param title the title
+     *
+     * @throws IllegalArgumentException if {@code title} is {@code null} or blank
+     */
+    public void setTitle(String title) {
+        if(title == null || title.isBlank())
+            throw new IllegalArgumentException("Noticeboard title cannot be null or blank");
+
+        this.title = title;
+    }
+
+    /**
+     * <p>Sets description.</p>
+     * @param description the description
+     */
     public void setDescription(String description) { this.description = description; }
 
     //ToDo methods
+    /**
+     * <p>Gets the todos.</p>
+     * @return the todos, wrapped in a {@link ArrayList} of {@link ToDo}
+     */
+    public ArrayList<ToDo> getToDos() { return todos; }
+
+    /**
+     * <p>Gets the count of todos.</p>
+     * @return the count of todos
+     */
     public int getToDoCount() { return todos.size(); }
-    public int getToDoIndex(String title) { return todos.indexOf(getToDo(title)); }
 
-    public ArrayList<ToDo> getToDos() { return this.todos; }
+    /**
+     * <p>Gets ToDo from its title.</p>
+     * @param title the title
+     * @return the todo if the noticeboard displays it, {@code null} otherwise
+     */
     public ToDo getToDo(String title){
-        for(ToDo todo : this.todos)
-            if(todo != null && todo.getTitle().equals(title))
-                return todo;
-
-        return null;
-    }
-    public ToDo getToDo(int index){;
-        if(index < 0 || index >= this.getToDoCount())
-            return null;
-        else
-            return todos.get(index);
+        return todos.stream().filter(todo -> todo.getTitle().equals(title))
+                .findFirst().orElse(null);
     }
 
-    public int addToDo(ToDo todo){
+    /**
+     * <p>Adds ToDo to the noticeboard.</p>
+     * @param todo the todo
+     *
+     * @throws IllegalArgumentException if {@code todo} is {@code null}
+     * @throws NoSuchElementException if the noticeboard does not exist
+     * @throws IllegalStateException if a ToDo with the same title already exists in the board
+     */
+    public void addToDo(ToDo todo){
         if(todo == null)
-            return -1;
+            throw new IllegalArgumentException("Cannot add a null ToDo to a Noticeboard");
+
         if(this.getToDo(todo.getTitle()) != null) //ToDo exists already
-            return -2;
+            throw new IllegalStateException("A ToDo with the same title exists already, duplicate titles are not allowed");
 
         todos.add(todo);
-        return 0;
     }
-    public int deleteToDo(String title, User user){
+
+    /**
+     * <p>Deletes ToDo from the noticeboard.</p>
+     * @param title the title
+     *
+     * @throws NoSuchElementException if the todo does not exist
+     */
+    public void deleteToDo(String title){
         ToDo todo = this.getToDo(title);
         if(todo == null)
-            return -1;
-
-        if(user == todo.getOwner()){
-            ArrayList<User> shared = todo.getSharedUsers();
-            while(!shared.isEmpty())
-                todo.removeSharedUser(user);
-        }
+            throw new NoSuchElementException("Cannot remove ToDo \"" + title + "\", it does not exist");
 
         todos.remove(todo);
-        return 0;
     }
 
     @Override

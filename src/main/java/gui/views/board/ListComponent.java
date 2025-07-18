@@ -1,4 +1,4 @@
-package gui.components;
+package gui.views.board;
 
 //Java imports
 import javax.swing.*;
@@ -8,7 +8,10 @@ import java.util.List;
 //App imports
 
 
-public class ListComponent {
+/**
+ * The ListComponent GUI component, displays a list of {@link String} elements.
+ */
+class ListComponent {
     //Members
     private final JList<String> list;
     private final DefaultListModel<String> listModel;
@@ -17,20 +20,37 @@ public class ListComponent {
     private final JPanel mainPanel;
 
     //Getters and Setters
+
+    /**
+     * Gets frame.
+     * @return the component's frame
+     */
     public JFrame getFrame() { return frame; };
+
+    /**
+     * Gets panel.
+     * @return the component's panel
+     */
     public JPanel getPanel() { return mainPanel; };
+
+    /**
+     * Gets list.
+     * @return the component's Jlist
+     */
     public JList<String> getList() { return list; }
+
+    /**
+     * Gets model.
+     * @return the list's model
+     */
     public DefaultListModel<String> getModel() { return listModel; }
 
-    //Methods
-    public void reloadGUIComponent() {
-        frame.pack();
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        frame.setLocation(screenSize.width / 2 - frame.getSize().width / 2, screenSize.height / 2 - frame.getSize().height / 2);
-        frame.setVisible(true);
-    }
-
     //Constructor
+
+    /**
+     * Instantiates a new ListComponent that displays {@code items}.
+     * @param items the items, wrapped in a {@link List} of {@link String}
+     */
     public ListComponent(List<String> items) {
         //Create new JFrame
         frame = new JFrame();
@@ -57,5 +77,20 @@ public class ListComponent {
         list.setVisible(true);
 
         this.reloadGUIComponent();
+    }
+
+    //Methods
+    /**
+     * Reloads the gui component.
+     */
+    public void reloadGUIComponent() {
+        frame.pack();
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        frame.setLocation(screenSize.width / 2 - frame.getSize().width / 2, screenSize.height / 2 - frame.getSize().height / 2);
+        frame.setVisible(true);
+    }
+
+    public void dispose() {
+        frame.dispose();
     }
 }

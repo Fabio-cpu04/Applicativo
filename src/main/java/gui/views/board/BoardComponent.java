@@ -1,4 +1,4 @@
-package gui.components;
+package gui.views.board;
 
 //Java imports
 import javax.swing.*;
@@ -9,28 +9,50 @@ import java.awt.event.MouseEvent;
 
 //App imports
 import controller.Controller;
-import gui.views.BoardViewer;
-import model.User;
-import model.Noticeboard;
-import model.ToDo;
+import dto.NoticeboardDTO;
+import dto.ToDoDTO;
 
-public class BoardComponent {
+/**
+ * Represents a {@link NoticeboardDTO} in the GUI
+ */
+class BoardComponent {
     private final JPanel mainPanel;
     private final JPanel todoPanel;
 
-    private final BoardViewer parentBoardViewer;
+    private final BoardView parentBoardView;
 
-    private final Noticeboard board;
+    private NoticeboardDTO board;
 
     //Setters and getters
+
+    /**
+     * Gets panel.
+     * @return the panel
+     */
     public JPanel getPanel() { return mainPanel; }
-    /* package */ BoardViewer getParentViewer() { return parentBoardViewer; }
-    /* package */ Noticeboard getBoard() { return board; }
+
+    /**
+     * Gets parent viewer.
+     * @return the parent {@link BoardView} component
+     */
+    /* package */ BoardView getParentViewer() { return parentBoardView; }
+
+    /**
+     * Gets board.
+     * @return the {@link NoticeboardDTO} the component links to
+     */
+    /* package */ NoticeboardDTO getBoard() { return board; }
 
     //Constructors
-    public BoardComponent(BoardViewer father, Noticeboard board) {
+
+    /**
+     * Instantiates a new Board component linked to {@code board} and attaches it to the {@code parent} component
+     * @param parent the parent {@link BoardView}
+     * @param board the linked {@link NoticeboardDTO}
+     */
+    public BoardComponent(BoardView parent, NoticeboardDTO board) {
         //Setting up state
-        this.parentBoardViewer = father;
+        this.parentBoardView = parent;
         this.board = board;
 
         //Initialize GUI
@@ -41,11 +63,11 @@ public class BoardComponent {
         GridBagConstraints c = new GridBagConstraints(0, 1, 2, 1, 0.5, 0.5,
                 GridBagConstraints.PAGE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0);
 
-        todoPanel = new JPanel(new GridLayout(board.getToDoCount(), 1));
+        todoPanel = new JPanel(new GridLayout(board.getToDos().size(), 1));
         todoPanel.setVisible(true);
         mainPanel.add(todoPanel, c);
 
-        for (ToDo todo : board.getToDos()) {
+        for (ToDoDTO todo : board.getToDos()) {
             ToDoComponent t = new ToDoComponent(this, todo);
             todoPanel.add(t.getPanel());
         }
@@ -53,9 +75,8 @@ public class BoardComponent {
         mainPanel.setVisible(true);
     }
 
-
     //Utility Methods
-    private void InitializeBoard(Noticeboard board) {
+    private void InitializeBoard(NoticeboardDTO board) {
         //Setting up main panel and its layout
         GridBagConstraints c = new GridBagConstraints(0, 0, 1, 1, 0.5, 0.0,
                 GridBagConstraints.PAGE_START, GridBagConstraints.HORIZONTAL, new Insets( 0,0,0,0), 0, 0);
@@ -75,7 +96,16 @@ public class BoardComponent {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                addToDo(ToDoComponent.getToDoFromUserInput(mainPanel));
+                try{
+                    //Sync App state
+                    ToDoDTO todo = ToDoComponent.getToDoFromUserInput(mainPanel);
+                    Controller.get().addToDo(board.getTitle(), todo);
+                    //Sync GUI state
+                    reloadToDoComponent();
+                }
+                catch (IllegalStateException exc) {
+                    JOptionPane.showMessageDialog(mainPanel, "Couldn't add ToDo, a ToDo with the same title exists already.");
+                }
             }
         });
 
@@ -85,41 +115,22 @@ public class BoardComponent {
         mainPanel.add(boardButton, c);
     }
 
-    /* package */ void reloadToDoComponents() {
-        todoPanel.removeAll();
-        todoPanel.setLayout(new GridLayout(board.getToDoCount(), 1));
+    /**
+     * Reloads the ToDo components after a change.
+     */
+    /* package */ void reloadToDoComponent() {
+        //Reset DTO to mimic the updated model's state
+        board = Controller.get().getNoticeboard(board.getTitle());
 
-        for (ToDo todo : board.getToDos()) {
+        todoPanel.removeAll();
+        todoPanel.setLayout(new GridLayout(board.getToDos().size(), 1));
+
+        for (ToDoDTO todo : board.getToDos()) {
             ToDoComponent t = new ToDoComponent(this, todo);
             todoPanel.add(t.getPanel());
         }
 
         todoPanel.revalidate();
         todoPanel.repaint();
-    }
-
-    /* package */ int addToDo(ToDo todo) {
-        //Sync app state
-        int res = board.addToDo(todo);
-
-        //Sync GUI state
-        if(res == 0)
-            this.reloadToDoComponents();
-
-        return res;
-    }
-
-    /* package */ int deleteToDo(ToDo todo){
-        //Sync app state
-        User user = Controller.getController().getLoggedUser();
-        if(user == null)
-            return -1;
-        int res = board.deleteToDo(todo.getTitle(), user);
-
-        //Sync GUI state
-        if(res == 0)
-            this.reloadToDoComponents(); //Sync GUI state
-
-        return res;
     }
 }

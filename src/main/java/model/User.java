@@ -1,60 +1,102 @@
 package model;
-import java.lang.String;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 
+import java.lang.String;
+import java.util.ArrayList;
+import java.util.NoSuchElementException;
+
+/**
+ * <p>A User in the model, identified by its username.</p>
+ * <p>Every user has a collection of {@link Noticeboard}.</p>
+ * <p>The class provides methods to retrieve, add, remove and get the count of noticeboards.</p>
+ */
 public class User {
     private final String username;
     private final String password;
-    final ArrayList<Noticeboard> boards;
+    private final ArrayList<Noticeboard> boards;
 
-    public User(String login, String password){
-        this.username = login;
+    /**
+     * <p>Instantiates a new User.</p>
+     * @param username the username
+     * @param password the password
+     *
+     * @throws IllegalArgumentException if {@code username} is {@code null} or blank
+     * @throws IllegalArgumentException if {@code password} is {@code null} or blank
+     */
+    public User(String username, String password){
+        if(username == null || username.isBlank())
+            throw new IllegalArgumentException("Username cannot be null or blank");
+        if(password == null || password.isBlank())
+            throw new IllegalArgumentException("Password cannot be null or blank");
+
+        this.username = username;
         this.password = password;
         boards = new ArrayList<Noticeboard>();
-
-        boards.add(new Noticeboard("Universita","Studio, Homework e Progetti."));
-        boards.add(new Noticeboard("Lavoro","Task da svolgere durante in orario di Lavoro"));
-        boards.add(new Noticeboard("Tempo libero","Attivita ed Hobby da svolgere durante il tempo Libero"));
     }
 
     //Getter & Setter methods
+    /**
+     * <p>Gets username.</p>
+     * @return the username
+     */
     public String getUsername() { return username; }
-    private String getPassword() { return password; }
+
+    /**
+     * <p>Gets password.</p>
+     * @return the password
+     */
+    public String getPassword() { return password; }
 
     //Noticeboard methods
-    public int getNoticeboardCount() { return boards.size(); }
+    /**
+     * <p>Gets noticeboards.</p>
+     * @return the noticeboards, wrapped in a {@link ArrayList} of {@link Noticeboard}
+     */
     public ArrayList<Noticeboard> getNoticeboards() { return boards; }
+
+    /**
+     * <p>Gets the count of noticeboards.</p>
+     * @return the count of noticeboards
+     */
+    public int getNoticeboardCount() { return boards.size(); }
+
+    /**
+     * <p>Gets user's noticeboard from title.</p>
+     * @param title the title
+     * @return the noticeboard if the user is able to view it, else {@code null}
+     */
     public Noticeboard getNoticeboard(String title){
         return boards.stream().filter(board -> board.getTitle().equals(title))
                 .findFirst().orElse(null);
     }
 
-    public int addNoticeboard(Noticeboard noticeboard){
-        if(this.getNoticeboard(noticeboard.getTitle()) != null)
-            return -1;
+    /**
+     * <p>Adds noticeboard.</p>
+     * @param noticeboard the noticeboard
+     *
+     * @throws IllegalArgumentException if {@code noticeboard} is {@code null}
+     * @throws IllegalStateException if a noticeboard with the same title exists already
+     */
+    public void addNoticeboard(Noticeboard noticeboard){
+        if(noticeboard == null)
+            throw new IllegalArgumentException("You cannot add a null Noticeboard to a User");
+
+        if(this.getNoticeboard(noticeboard.getTitle()) != null) //Board exists already
+            throw new IllegalStateException("A Noticeboard with the same title exists already, duplicate titles are not allowed");
 
         boards.add(noticeboard);
-        return 0;
     }
-    public int deleteNoticeboard(String title){
+
+    /**
+     * <p>Deletes noticeboard.</p>
+     * @param title the title
+     *
+     * @throws NoSuchElementException if the noticeboard does not exist
+     */
+    public void deleteNoticeboard(String title){
         Noticeboard b = this.getNoticeboard(title);
         if(b == null)
-            return -1;
+            throw new NoSuchElementException("Cannot remove Noticeboard  \"" + title + "\", it does not exist");
 
         boards.remove(b);
-        return 0;
-    }
-
-    //ToDo utility methods
-    public ArrayList<ToDo> getToDos(){
-        ArrayList<ToDo> todos = new ArrayList<ToDo>();
-        for(Noticeboard b : boards){
-            todos.addAll(b.getToDos());
-        }
-
-        return todos;
     }
 }

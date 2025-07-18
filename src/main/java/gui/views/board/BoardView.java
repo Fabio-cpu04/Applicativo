@@ -1,4 +1,4 @@
-package gui.views;
+package gui.views.board;
 
 //Java imports
 import javax.swing.*;
@@ -10,44 +10,56 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 //App imports
-import model.*;
-import controller.Controller;
-import gui.components.*;
+import dto.ToDoDTO;
+import gui.views.GUIView;
 
-public class BoardViewer implements GUIView {
+import controller.Controller;
+import dto.NoticeboardDTO;
+
+/**
+ * The Board view, displays the logged user's Noticeboards and enables the user to add, modify and delete Noticeboards and their ToDos, and use the app's ToDos search functions.
+ */
+public class BoardView implements GUIView {
     private JFrame viewerFrame;
     private JPanel mainPanel;
 
-    private final ArrayList<Noticeboard> toDisplay;
+    private final ArrayList<NoticeboardDTO> toDisplay;
+
+    //Implemented methods
+    public void disposeView() {
+        viewerFrame.setVisible(false);
+        viewerFrame.dispose();
+    }
 
     //Setters and getters
-    public JFrame getFrame() { return viewerFrame; }
-    public ArrayList<Noticeboard> getCurrentlyDisplayedBoards() { return toDisplay; }
+    /**
+     * Gets the currently displayed boards (only up to three noticeboards can be displayed at once)
+     * @return the currently displayed {@link NoticeboardDTO} wrapped in a {@link ArrayList}
+     */
+    public ArrayList<NoticeboardDTO> getCurrentlyDisplayedBoards() { return toDisplay; }
 
     //Constructor
-    public BoardViewer() {
-        //Set state
-        Controller.getController().setState(Controller.State.VIEWER);
-        User user = Controller.getController().getLoggedUser();
 
+    /**
+     * Instantiates a new Board view and displays the first three Noticeboards of the logged user.
+     */
+    public BoardView() {
         //Initialize GUI
         this.initializeViewer();
 
         //Initialize Board components
-        ArrayList<Noticeboard> userBoards = user.getNoticeboards();
-        toDisplay = new ArrayList<Noticeboard>();
+        List<NoticeboardDTO> userBoards = Controller.get().getNoticeboards();
+        toDisplay = new ArrayList<NoticeboardDTO>();
         for(int i = 0; i < Math.min(3, userBoards.size()); i++)
             toDisplay.add(userBoards.get(i));
 
-        for(Noticeboard board : toDisplay) {
+        for(NoticeboardDTO board : toDisplay) {
             BoardComponent b = new BoardComponent(this, board);
             JPanel panel = b.getPanel();
             mainPanel.add(panel);
@@ -83,9 +95,8 @@ public class BoardViewer implements GUIView {
         viewerFrame.getContentPane().add(scrollPane);
 
         //Attach main content panel
-        User user = Controller.getController().getLoggedUser();
-        int nBoards = user.getNoticeboards().size();
-        mainPanel = new JPanel(new GridLayout(1, Math.min(nBoards, 3))); //Hard coded to only show <=3 NoticeBoards
+        int nBoards = Controller.get().getNoticeboardCount();
+        mainPanel = new JPanel(new GridLayout(1, 3)); //Hard coded to only show a max of 3 NoticeBoards
         scrollPane.setViewportView(mainPanel);
     }
 
@@ -93,7 +104,7 @@ public class BoardViewer implements GUIView {
         //Create, init, and attach menu bar
         JMenuBar menuBar = new JMenuBar();
         JMenu noticeboardsMenu = new JMenu("Noticeboards");
-        JMenu userMenu = new JMenu("User");
+        JMenu userMenu = new JMenu("ToDos");
 
         //Noticeboard menu options
         JMenuItem newNoticeboardItem = new JMenuItem("New Noticeboard");
@@ -123,12 +134,16 @@ public class BoardViewer implements GUIView {
                 if(description == null)
                     return;
 
-                //Sync App state
-                User user = Controller.getController().getLoggedUser();
-                user.addNoticeboard(new Noticeboard(title, description));
+                try {
+                    //Sync App state
+                    Controller.get().addNoticeboard(new NoticeboardDTO(title, description));
+                    //Sync GUI state
+                    reloadBoardComponents();
+                }
+                catch(IllegalStateException exc) {
+                    JOptionPane.showMessageDialog(mainPanel, "Couldn't add Noticeboard, the Noticeboard exists already.");
+                }
 
-                //Sync GUI state
-                reloadBoardComponents();
             }
         });
 
@@ -136,8 +151,7 @@ public class BoardViewer implements GUIView {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //Create ListComponent object
-                User user = Controller.getController().getLoggedUser();
-                List<String> items = user.getNoticeboards().stream().map(Noticeboard::getTitle).toList();
+                List<String> items = Controller.get().getNoticeboards().stream().map(NoticeboardDTO::getTitle).toList();
                 ListComponent list = new ListComponent(items);
 
                 //Create "Modify" button and init its settings
@@ -161,7 +175,7 @@ public class BoardViewer implements GUIView {
                         super.mouseClicked(e);
 
                         int index = list.getList().getSelectedIndex();
-                        ArrayList<Noticeboard> boards = Controller.getController().getLoggedUser().getNoticeboards();
+                        List<NoticeboardDTO> boards = Controller.get().getNoticeboards();
                         if(index < 0 || index >= boards.size()) {
                             JOptionPane.showMessageDialog(list.getPanel(), "Please select a valid noticeboard.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
@@ -183,10 +197,9 @@ public class BoardViewer implements GUIView {
                                 return;
 
                             //Sync App state
-                            User user = Controller.getController().getLoggedUser();
-                            Noticeboard board = user.getNoticeboard(list.getModel().get(index));
-                            board.setTitle(title);
-                            board.setDescription(description);
+                            String targetTitle = list.getModel().get(index);
+                            NoticeboardDTO updatedBoard = new NoticeboardDTO(title, description);
+                            Controller.get().updateNoticeboard(targetTitle, updatedBoard);
 
                             //Sync GUI state
                             DefaultListModel<String> model = list.getModel();
@@ -203,8 +216,7 @@ public class BoardViewer implements GUIView {
             @Override
             public void actionPerformed(ActionEvent e) {
                 //Create ListComponent object
-                User user = Controller.getController().getLoggedUser();
-                List<String> items = user.getNoticeboards().stream().map(Noticeboard::getTitle).toList();
+                List<String> items = Controller.get().getNoticeboards().stream().map(NoticeboardDTO::getTitle).toList();
                 ListComponent list = new ListComponent(items);
 
                 //Create "Delete" button and init its settings
@@ -228,7 +240,7 @@ public class BoardViewer implements GUIView {
                         super.mouseClicked(e);
 
                         int index = list.getList().getSelectedIndex();
-                        ArrayList<Noticeboard> boards = Controller.getController().getLoggedUser().getNoticeboards();
+                        List<NoticeboardDTO> boards = Controller.get().getNoticeboards();
                         if(index < 0 || index >= boards.size()) {
                             JOptionPane.showMessageDialog(list.getPanel(), "Please select a valid noticeboard.", "Error", JOptionPane.ERROR_MESSAGE);
                         }
@@ -238,8 +250,7 @@ public class BoardViewer implements GUIView {
                             if(JOptionPane.YES_OPTION ==
                                     JOptionPane.showConfirmDialog(list.getPanel(), "Are you really sure you want to delete the Board \"" + title + "\"?", "", JOptionPane.YES_NO_OPTION)) {
                                 //Sync App change
-                                User user = Controller.getController().getLoggedUser();
-                                user.deleteNoticeboard(title);
+                                Controller.get().deleteNoticeboard(title);
 
                                 //Sync GUI change
                                 list.getModel().remove(index);
@@ -256,14 +267,14 @@ public class BoardViewer implements GUIView {
         expiringTodayItem.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                User user = Controller.getController().getLoggedUser();
                 LocalDate today = LocalDate.now();
 
                 ArrayList<String> expiringToday = new ArrayList<String>();
-                for (Noticeboard board : user.getNoticeboards())
-                    for(ToDo todo : board.getToDos())
+                for (NoticeboardDTO board : Controller.get().getNoticeboards())
+                    for(ToDoDTO todo : board.getToDos())
                         if (todo.getExpiryDate().toLocalDate().isEqual(today) && !todo.isExpired())
-                            expiringToday.add(board.getTitle() + "'s \"" + todo.getTitle() + "\" (Expires at" + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) +  ")");
+                            expiringToday.add(todo.getTitle() + " (from " + board.getTitle() + ")" +
+                                    "   Expires at " + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) +  ")");
 
                 ListComponent list = new ListComponent(expiringToday.stream().toList());
             }
@@ -301,14 +312,13 @@ public class BoardViewer implements GUIView {
                 }
 
                 //Collect all unexpired ToDos
-                User user = Controller.getController().getLoggedUser();
-
                 ArrayList<String> expiringAtDate = new ArrayList<String>();
-                for (Noticeboard board : user.getNoticeboards()) {
-                    for (ToDo todo : board.getToDos()){
+                for (NoticeboardDTO board : Controller.get().getNoticeboards()) {
+                    for (ToDoDTO todo : board.getToDos()){
                         boolean beforeDate = todo.getExpiryDate().toLocalDate().isBefore(date);
                         if (beforeDate && !todo.isExpired())
-                            expiringAtDate.add(board.getTitle() + "'s \"" + todo.getTitle() + "\" (Expires at" + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) +  ")");
+                            expiringAtDate.add(todo.getTitle() + " (from " + board.getTitle() + ")" +
+                                    "   (Expires at " + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) +  ")");
                     }
                 }
                 ListComponent list = new ListComponent(expiringAtDate.stream().toList());
@@ -330,17 +340,15 @@ public class BoardViewer implements GUIView {
                         validInput = true;
                 }
 
-                User user = Controller.getController().getLoggedUser();
-                ArrayList<ToDo> allTodos = user.getToDos();
-
-                ArrayList<ToDo> matches = new ArrayList<ToDo>();
-                for (ToDo todo : allTodos) {
-                    if(todo.getTitle().contains(title))
-                        matches.add(todo);
+                ArrayList<String> matches = new ArrayList<String>();
+                for (NoticeboardDTO board : Controller.get().getNoticeboards()) {
+                    for (ToDoDTO todo : board.getToDos()) {
+                        if(todo.getTitle().contains(title))
+                            matches.add(todo.getTitle() + " (from " + board.getTitle() + ")");
+                    }
                 }
 
-                List<String> items = matches.stream().map(ToDo::getTitle).toList();
-                ListComponent list = new ListComponent(items);
+                ListComponent list = new ListComponent(matches.stream().toList());
             }
         });
 
@@ -357,26 +365,31 @@ public class BoardViewer implements GUIView {
         viewerFrame.setJMenuBar(menuBar);
     }
 
+    /**
+     * Refreshes the view.
+     */
     public void refreshBoardComponents() {
-        User user = Controller.getController().getLoggedUser();
-        int nBoards = user.getNoticeboards().size();
-
         mainPanel.removeAll();
-        mainPanel.setLayout(new GridLayout(1, nBoards));
 
-        for(Noticeboard board : toDisplay) {
+        //Refresh DTOs'data
+        toDisplay.replaceAll(board -> Controller.get().getNoticeboard(board.getTitle()));
+
+        //Refresh components
+        for(NoticeboardDTO board : toDisplay) {
             BoardComponent b = new BoardComponent(this, board);
             mainPanel.add(b.getPanel());
         }
 
+        //Redraw BoardComponent
         mainPanel.revalidate();
         mainPanel.repaint();
     }
 
+    /**
+     * Reloads the view and all of its components.
+     */
     public void reloadBoardComponents() {
-        User user = Controller.getController().getLoggedUser();
-
-        ArrayList<Noticeboard> userBoards = user.getNoticeboards();
+        List<NoticeboardDTO> userBoards = Controller.get().getNoticeboards();
         toDisplay.clear();
         for(int i = 0; i < Math.min(3, userBoards.size()); i++)
             toDisplay.add(userBoards.get(i));

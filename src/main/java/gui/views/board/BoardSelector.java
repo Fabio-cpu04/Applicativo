@@ -1,30 +1,42 @@
-package gui.components;
+package gui.views.board;
 
 import controller.Controller;
-import gui.views.BoardViewer;
-import model.Noticeboard;
+import dto.NoticeboardDTO;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
-public class BoardSelector {
+/**
+ * A utility GUI component, spawns a combo box attached to a {@link BoardComponent} in order to change the displayed noticeboard.
+ */
+/* package */ class BoardSelector {
     private final JComboBox<String> boardSelector;
 
     private final BoardComponent parentBoardComponent;
 
     //Getters
-    public JComboBox<String> getComboBox() { return boardSelector; }
+
+    /**
+     * Gets the component's associated {@link JComboBox<String>} component.
+     * @return the component's combo box
+     */
+    /* package */ JComboBox<String> getComboBox() { return boardSelector; }
 
     //Constructor
-    public BoardSelector(BoardComponent parent, Dimension boardSize) {
+    /**
+     * Initializes a new BoardSelector bound to a {@link BoardComponent}
+     * @param parent the parent {@link BoardComponent}
+     * @param parentBoardSize the size of the parent component
+     */
+    /* package */ BoardSelector(BoardComponent parent, Dimension parentBoardSize) {
         //Setting state
         this.parentBoardComponent = parent;
 
         //Initializing component
-        ArrayList<Noticeboard> boards = new ArrayList<Noticeboard>(Controller.getController().getLoggedUser().getNoticeboards());
-        ArrayList<Noticeboard> displayed = new ArrayList<Noticeboard>(parentBoardComponent.getParentViewer().getCurrentlyDisplayedBoards());
+        ArrayList<NoticeboardDTO> boards = new ArrayList<NoticeboardDTO>(Controller.get().getNoticeboards());
+        ArrayList<NoticeboardDTO> displayed = new ArrayList<NoticeboardDTO>(parentBoardComponent.getParentViewer().getCurrentlyDisplayedBoards());
         displayed.remove(parentBoardComponent.getBoard());
         boards.removeAll(displayed);
 
@@ -40,7 +52,7 @@ public class BoardSelector {
         boardSelector.setSelectedIndex(boards.indexOf(parentBoardComponent.getBoard()));
         boardSelector.setToolTipText(originalTitle + (originalDescription.isEmpty() ? " / ..." : " / " + originalDescription));
 
-        Dimension bsDim = new Dimension((int)((double)boardSize.width / 1.5), boardSize.height / 16);
+        Dimension bsDim = new Dimension((int)((double)parentBoardSize.width / 1.5), parentBoardSize.height / 16);
         boardSelector.setPreferredSize(bsDim);
         boardSelector.setVisible(true);
 
@@ -51,7 +63,7 @@ public class BoardSelector {
                 boardSelector.setToolTipText((String) boardSelector.getSelectedItem());
 
                 //Sync GUI changes
-                BoardViewer viewer = parentBoardComponent.getParentViewer();
+                BoardView viewer = parentBoardComponent.getParentViewer();
                 int currentBoardIndex = viewer.getCurrentlyDisplayedBoards().indexOf(parentBoardComponent.getBoard());
                 int newBoardIndex = boardSelector.getSelectedIndex();
 
@@ -61,9 +73,9 @@ public class BoardSelector {
     }
 
     //Methods
-    private int swapViewerBoard(int viewerIndex, Noticeboard newBoard) {
-        BoardViewer viewer = parentBoardComponent.getParentViewer();
-        ArrayList<Noticeboard> toDisplay = viewer.getCurrentlyDisplayedBoards();
+    private int swapViewerBoard(int viewerIndex, NoticeboardDTO newBoard) {
+        BoardView viewer = parentBoardComponent.getParentViewer();
+        ArrayList<NoticeboardDTO> toDisplay = viewer.getCurrentlyDisplayedBoards();
 
         if(viewerIndex < 0 || viewerIndex > 3)
             return -1;

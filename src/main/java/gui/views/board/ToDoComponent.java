@@ -47,7 +47,7 @@ class ToDoComponent {
      * @param parent the parent {@link BoardComponent}
      * @param todo   the linked {@link ToDoDTO}
      */
-    public ToDoComponent(BoardComponent parent, ToDoDTO todo) {
+    /* package */ ToDoComponent(BoardComponent parent, ToDoDTO todo) {
         //Setting up state
         this.parentBoardComponent = parent;
         this.todo = todo;
@@ -183,7 +183,7 @@ class ToDoComponent {
      * @param mainPanel the panel that spawns the dialogues
      * @return a ToDo constructed according to the user's input.
      */
-    static ToDoDTO getToDoFromUserInput(JPanel mainPanel) {
+    /* package */ static ToDoDTO getToDoFromUserInput(JPanel mainPanel) {
         boolean validInput = false;
         String title = null, description = null, expiryDateString = null, link = null, activityURL = null, imageURL = null, backGroundColor = null; //null because of some stupid wrong compiler error
         LocalDateTime expiryDate = null;

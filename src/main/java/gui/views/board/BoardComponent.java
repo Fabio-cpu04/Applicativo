@@ -50,7 +50,7 @@ class BoardComponent {
      * @param parent the parent {@link BoardView}
      * @param board the linked {@link NoticeboardDTO}
      */
-    public BoardComponent(BoardView parent, NoticeboardDTO board) {
+    /* package */ BoardComponent(BoardView parent, NoticeboardDTO board) {
         //Setting up state
         this.parentBoardView = parent;
         this.board = board;

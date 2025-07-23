@@ -368,7 +368,7 @@ public class BoardView implements GUIView {
     /**
      * Refreshes the view.
      */
-    public void refreshBoardComponents() {
+    /* package */ void refreshBoardComponents() {
         mainPanel.removeAll();
 
         //Refresh DTOs'data
@@ -388,7 +388,7 @@ public class BoardView implements GUIView {
     /**
      * Reloads the view and all of its components.
      */
-    public void reloadBoardComponents() {
+    /* package */ void reloadBoardComponents() {
         List<NoticeboardDTO> userBoards = Controller.get().getNoticeboards();
         toDisplay.clear();
         for(int i = 0; i < Math.min(3, userBoards.size()); i++)

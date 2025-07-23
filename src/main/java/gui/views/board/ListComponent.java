@@ -51,7 +51,7 @@ class ListComponent {
      * Instantiates a new ListComponent that displays {@code items}.
      * @param items the items, wrapped in a {@link List} of {@link String}
      */
-    public ListComponent(List<String> items) {
+    /* package */ ListComponent(List<String> items) {
         //Create new JFrame
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

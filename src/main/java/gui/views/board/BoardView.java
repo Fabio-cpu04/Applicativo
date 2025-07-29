@@ -59,12 +59,8 @@ public class BoardView implements GUIView {
         for(int i = 0; i < Math.min(3, userBoards.size()); i++)
             toDisplay.add(userBoards.get(i));
 
-        for(NoticeboardDTO board : toDisplay) {
-            BoardComponent b = new BoardComponent(this, board);
-            JPanel panel = b.getPanel();
-            mainPanel.add(panel);
-        }
-
+        //Initializing board components
+        this.drawBoards();
         mainPanel.setVisible(true);
 
         //Attach menu
@@ -375,10 +371,7 @@ public class BoardView implements GUIView {
         toDisplay.replaceAll(board -> Controller.get().getNoticeboard(board.getTitle()));
 
         //Refresh components
-        for(NoticeboardDTO board : toDisplay) {
-            BoardComponent b = new BoardComponent(this, board);
-            mainPanel.add(b.getPanel());
-        }
+        this.drawBoards();
 
         //Redraw BoardComponent
         mainPanel.revalidate();
@@ -396,4 +389,33 @@ public class BoardView implements GUIView {
 
         this.refreshBoardComponents();
     }
+
+    /**
+     * Draws the BoardComponents & dummies if needed.
+     */
+    private void drawBoards() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension boardSize = new Dimension(screenSize.width / 6, screenSize.height / 2);
+
+        for (NoticeboardDTO board : toDisplay) {
+            BoardComponent boardComponent = new BoardComponent(this, board);
+            mainPanel.add(boardComponent.getPanel());
+        }
+
+        this.addDummyBoards(boardSize);
+    }
+
+    /**
+     * Draws dummies.
+     * @param boardSize the size of the boards, needed to size the dummies appropriately
+     */
+    private void addDummyBoards(Dimension boardSize) {
+        for(int i = 0; i < 3 - toDisplay.size(); i++){
+            JPanel dummyBoard = new JPanel();
+            dummyBoard.setSize(boardSize);
+            dummyBoard.setBorder(BorderFactory.createMatteBorder(0,2,0,2, Color.lightGray));
+            mainPanel.add(dummyBoard);
+        }
+    }
+
 }

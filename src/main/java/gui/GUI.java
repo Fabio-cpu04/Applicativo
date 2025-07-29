@@ -33,9 +33,9 @@ public class GUI {
      * @param view the new view
      */
     public void swapAndDisposeView(GUIView view) {
-        if (currentView != null && view != null) {
+        if (currentView != null && view != null)
             currentView.disposeView();
-        }
+
         currentView = view;
     }
 }

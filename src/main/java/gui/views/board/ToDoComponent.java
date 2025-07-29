@@ -135,10 +135,17 @@ class ToDoComponent {
         //Setting up ToDo image (optional)
         String imgPath = todo.getImageURL();
         if(imgPath != null && !imgPath.isEmpty()){
-            c.gridy += 1;
-            ImageIcon img = new ImageIcon(imgPath, "Image could not be loaded");
-            JLabel imgLabel = new JLabel(img);
-            mainPanel.add(imgLabel, c);
+            //Load image and handle errors
+            ImageIcon img = new ImageIcon(imgPath);
+            if (img.getImageLoadStatus() == MediaTracker.COMPLETE) {
+                c.gridy += 1;
+                //Rescale image
+                float widthHeightRatio = (float) img.getIconWidth() / img.getIconHeight();
+                img.setImage(img.getImage().getScaledInstance(boardSize.width, (int) (boardSize.width / widthHeightRatio), Image.SCALE_SMOOTH));
+
+                JLabel imgLabel = new JLabel(img);
+                mainPanel.add(imgLabel, c);
+            }
         }
 
         //Setting up ToDo activityURL (optional)
@@ -219,7 +226,7 @@ class ToDoComponent {
 
         //Get title (necessary)
         while(!validInput) {
-            title = JOptionPane.showInputDialog(mainPanel, "Insert todo title", "", JOptionPane.PLAIN_MESSAGE);
+            title = JOptionPane.showInputDialog(mainPanel, "Insert todo title", "Add a new ToDo", JOptionPane.PLAIN_MESSAGE);
             if(title == null)
                 return null;
             else
@@ -228,13 +235,13 @@ class ToDoComponent {
         validInput = false;
 
         //Get description (optional)
-        description = JOptionPane.showInputDialog(mainPanel, "Insert todo description (optional)", "", JOptionPane.PLAIN_MESSAGE);
+        description = JOptionPane.showInputDialog(mainPanel, "Insert todo description (optional)", "Add a new ToDo", JOptionPane.PLAIN_MESSAGE);
         if(description == null)
             return null;
 
         //Get expiryDate (optional)
         while(!validInput) {
-            expiryDateString = JOptionPane.showInputDialog(mainPanel, "Choose expiration date (use the following format \"dd/mm/yyyy hh:mm\", date is optional, leave blank to use no date)", "", JOptionPane.PLAIN_MESSAGE);
+            expiryDateString = JOptionPane.showInputDialog(mainPanel, "Choose expiration date (use the following format \"dd/mm/yyyy hh:mm\", date is optional, leave blank to use no date)", "Add a new ToDo", JOptionPane.PLAIN_MESSAGE);
             if(expiryDateString == null)
                 return null;
             else {
@@ -258,7 +265,7 @@ class ToDoComponent {
 
         //Get activity url (optional)
         while(!validInput) {
-            activityURL = JOptionPane.showInputDialog(mainPanel, "Insert todo activity's URL (optional)", "", JOptionPane.PLAIN_MESSAGE);
+            activityURL = JOptionPane.showInputDialog(mainPanel, "Insert todo activity's URL (optional)", "Add a new ToDo", JOptionPane.PLAIN_MESSAGE);
             if(activityURL != null)
                 validInput = activityURL.isEmpty() || Pattern.matches("^https://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]", activityURL);
             else
@@ -267,7 +274,7 @@ class ToDoComponent {
 
         //Get image url (optional)
         final JFileChooser fc = new JFileChooser();
-        int returnVal = fc.showDialog(mainPanel, "Choose ToDo's image");
+        int returnVal = fc.showDialog(mainPanel, "Choose the ToDo image");
         if(returnVal == JFileChooser.APPROVE_OPTION)
             imageURL = fc.getSelectedFile().getAbsolutePath().replace('\\', '/');
         else if(returnVal == JFileChooser.CANCEL_OPTION)
@@ -276,13 +283,26 @@ class ToDoComponent {
             return null;
 
         //Get color (optional)
-        Color color = JColorChooser.showDialog(mainPanel, "Choose todo's color (optional)", null);
+        Color color = JColorChooser.showDialog(mainPanel, "Choose the ToDo color (optional)", null);
         if(color == null)
             backGroundColor = "";
         else
             backGroundColor = "#" + Integer.toHexString(color.getRGB()).substring(2); //Converts to hex RGB (color.getRGB() returns in AARRGGBB format)
 
         return new ToDoDTO(title, description, expiryDate, activityURL, imageURL, Controller.get().getLoggedUser().getUsername(), backGroundColor);
+    }
+
+    /**
+     * Checks if color is too dark for black text
+     * @param color the color
+     * @return {@code true} if the color is too dark for black text, otherwise {@code false}
+     */
+    private static boolean isDark(Color color) {
+        // Calculate brightness using the luminance formula
+        double brightness = ((color.getRed() * 299) + (color.getGreen() * 587) + (color.getBlue() * 114)) / 1000.0;
+
+        // Return true if it's dark
+        return brightness < 128;
     }
 
     private JTextPane styleText(String text, boolean bold, boolean italic, Color color, boolean editable, boolean focusable) {
@@ -312,18 +332,7 @@ class ToDoComponent {
         return textPane;
     }
 
-    /**
-     * Checks if color is too dark for black text
-     * @param color the color
-     * @return {@code true} if the color is too dark for black text, otherwise {@code false}
-     */
-    private static boolean isDark(Color color) {
-        // Calculate brightness using the luminance formula
-        double brightness = ((color.getRed() * 299) + (color.getGreen() * 587) + (color.getBlue() * 114)) / 1000.0;
 
-        // Return true if it's dark
-        return brightness < 128;
-    }
 
     private JPopupMenu getTodoPopupMenu() {
         JPopupMenu popup = new JPopupMenu("");
@@ -364,7 +373,7 @@ class ToDoComponent {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(JOptionPane.YES_OPTION ==
-                JOptionPane.showConfirmDialog(mainPanel, "Are you really sure you want to " + (todo.isCompleted() ? "set as non complete" : "set as complete") + "?", "", JOptionPane.YES_NO_OPTION)) {
+                JOptionPane.showConfirmDialog(mainPanel, "Are you really sure you want to set the todo as " + (todo.isCompleted() ? "non complete" : "complete") + "?", "", JOptionPane.YES_NO_OPTION)) {
                     String boardTitle = parentBoardComponent.getBoard().getTitle();
                     String todoTitle = todo.getTitle();
                     Controller.get().changeCompletionState(boardTitle, todoTitle);
@@ -379,7 +388,7 @@ class ToDoComponent {
             public void actionPerformed(ActionEvent e) {
                 boolean validInput = false;
                 do {
-                    String title = JOptionPane.showInputDialog(mainPanel, "Insert todo title", "", JOptionPane.PLAIN_MESSAGE);
+                    String title = JOptionPane.showInputDialog(mainPanel, "Insert the new title", "", JOptionPane.PLAIN_MESSAGE);
                     if(title == null)
                         validInput = true;
                     else if (!title.isEmpty()) {
@@ -402,7 +411,7 @@ class ToDoComponent {
         descriptionItem.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String description = JOptionPane.showInputDialog(mainPanel, "Insert todo description (optional)", "", JOptionPane.PLAIN_MESSAGE);
+                String description = JOptionPane.showInputDialog(mainPanel, "Insert the new description (optional)", "", JOptionPane.PLAIN_MESSAGE);
                 if(description != null) {
                     String boardTitle = parentBoardComponent.getBoard().getTitle();
                     String todoTitle = todo.getTitle();

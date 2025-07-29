@@ -99,7 +99,8 @@ class BoardComponent {
                 try{
                     //Sync App state
                     ToDoDTO todo = ToDoComponent.getToDoFromUserInput(mainPanel);
-                    Controller.get().addToDo(board.getTitle(), todo);
+                    if(todo != null)
+                        Controller.get().addToDo(board.getTitle(), todo);
                     //Sync GUI state
                     reloadToDoComponent();
                 }

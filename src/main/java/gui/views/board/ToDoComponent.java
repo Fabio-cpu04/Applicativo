@@ -2,6 +2,8 @@ package gui.views.board;
 
 //Java imports
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.text.*;
@@ -82,30 +84,52 @@ class ToDoComponent {
 
         //Calculating properties
         Color backgroundColor = todo.getBackGroundColor().isEmpty() ? Color.GRAY.brighter() : Color.decode(todo.getBackGroundColor());
+        Color textColor = ToDoComponent.isDark(backgroundColor) ? Color.WHITE : Color.BLACK;
+
 
         //Setting up ToDoState (necessary)
         String state = todo.isCompleted() ? "[Completed] " : "[Not Completed]";
         JLabel s = new JLabel(state);
         if(todo.isCompleted())
-            s.setForeground(Color.GREEN.darker());
+            s.setForeground(ToDoComponent.isDark(backgroundColor) ? Color.GREEN.brighter() : Color.GREEN.darker());
+        else
+            s.setForeground(textColor);
 
         mainPanel.add(s, c);
-        c.gridy += 1;
-        c.anchor = GridBagConstraints.FIRST_LINE_START;
 
-        //Setting up ToDo title (necessary)
-        String title = todo.getTitle();
-        JTextPane t = styleText(title, true, false, (todo.isExpired() ? Color.RED.darker() : null), false, false);
-        t.setBackground(backgroundColor);
-        mainPanel.add(t, c);
-
-        //Setting up ToDo description (optional)
-        String desc = todo.getDescription();
-        if(desc != null && !desc.isEmpty()) {
+        //Setting up ToDo title (necessary) and ToDo description (optional)
+        {
             c.gridy += 1;
-            JTextPane p = styleText(desc, false, false, null, false, false);
-            p.setBackground(backgroundColor.brighter());
-            mainPanel.add(p, c);
+            c.anchor = GridBagConstraints.FIRST_LINE_START;
+
+            String title = todo.getTitle();
+            String desc = todo.getDescription();
+
+            //If description exists, let title be its border's title
+            Color titleColor = todo.isExpired()
+                    ? (ToDoComponent.isDark(backgroundColor) ? Color.RED.brighter() : Color.RED.darker())
+                    : textColor;
+
+            if (desc != null && !desc.isEmpty()) {
+                Border titleBorder = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(ToDoComponent.isDark(backgroundColor) ? backgroundColor.brighter() : backgroundColor.darker(), 2, true),
+                        title, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, titleColor);
+
+                JTextPane p = styleText(desc, false, false, textColor, false, false);
+                p.setBackground(backgroundColor);
+                p.setBorder(titleBorder);
+                p.setToolTipText(title);
+                p.setSize(new Dimension(boardSize.width, Short.MAX_VALUE));
+                p.setPreferredSize(new Dimension(boardSize.width, p.getPreferredSize().height)); //Size workaround, first forces size to board width & max height, then resets height to fit
+                mainPanel.add(p, c);
+            }
+            //If description does not exist, only draw the title
+            else {
+                JTextPane t = styleText(title, true, false, titleColor, false, false);
+                t.setBackground(backgroundColor);
+                t.setSize(new Dimension(boardSize.width, Short.MAX_VALUE));
+                t.setPreferredSize(new Dimension(boardSize.width, t.getPreferredSize().height)); //Size workaround, first forces size to board width & max height, then resets height to fit
+                mainPanel.add(t, c);
+            }
         }
 
         //Setting up ToDo image (optional)
@@ -121,7 +145,10 @@ class ToDoComponent {
         String activityURL = todo.getActivityURL();
         if(activityURL != null && !activityURL.isEmpty()) {
             c.gridy += 1;
-            JTextPane p = styleText(activityURL, false, false, Color.BLUE, false, false);
+
+            Color urlColor = ToDoComponent.isDark(backgroundColor) ? Color.CYAN : Color.BLUE;
+            String formattedURL = activityURL.length() > 48 ? activityURL.substring(0, 32).concat("...") : activityURL; //Arbitrary length chosen for "beauty purposes"
+            JTextPane p = styleText(formattedURL, false, false, urlColor, false, false);
             p.setBackground(backgroundColor);
             p.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             mainPanel.add(p, c);
@@ -141,7 +168,9 @@ class ToDoComponent {
                         Document d = p.getStyledDocument();
                         Style style = p.getStyle("customStyle");
                         StyleConstants.setBold(style, true);
-                        StyleConstants.setForeground(style, Color.RED.darker());
+
+                        Color badlinkColor = ToDoComponent.isDark(backgroundColor) ? Color.RED.brighter() : Color.RED.darker();
+                        StyleConstants.setForeground(style, badlinkColor);
                         try {
                             d.insertString(d.getLength(), " (Bad Link)", style);
                         } catch (Exception exc) {
@@ -156,7 +185,7 @@ class ToDoComponent {
         LocalDateTime expiryDate = todo.getExpiryDate();
         if(todo.getExpiryDate() != null && todo.getExpiryDate() != LocalDateTime.MAX) {
             c.gridy += 1;
-            JTextPane p = styleText(expiryDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")), false, true, null, false, false);
+            JTextPane p = styleText(expiryDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")), false, true, textColor, false, false);
             p.setBackground(backgroundColor);
 
             if (todo.isExpired()) { //If expired, add "(exp)" at end of date.
@@ -281,6 +310,19 @@ class ToDoComponent {
         }
 
         return textPane;
+    }
+
+    /**
+     * Checks if color is too dark for black text
+     * @param color the color
+     * @return {@code true} if the color is too dark for black text, otherwise {@code false}
+     */
+    private static boolean isDark(Color color) {
+        // Calculate brightness using the luminance formula
+        double brightness = ((color.getRed() * 299) + (color.getGreen() * 587) + (color.getBlue() * 114)) / 1000.0;
+
+        // Return true if it's dark
+        return brightness < 128;
     }
 
     private JPopupMenu getTodoPopupMenu() {
@@ -451,7 +493,8 @@ class ToDoComponent {
         backgroundColorItem.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Color color = JColorChooser.showDialog(mainPanel, "Choose todo's color (optional)", null);
+                Color backgroundColor = todo.getBackGroundColor().isEmpty() ? Color.GRAY.brighter() : Color.decode(todo.getBackGroundColor());
+                Color color = JColorChooser.showDialog(mainPanel, "Choose todo's color (optional)", backgroundColor);
 
                 String boardTitle = parentBoardComponent.getBoard().getTitle();
                 String todoTitle = todo.getTitle();

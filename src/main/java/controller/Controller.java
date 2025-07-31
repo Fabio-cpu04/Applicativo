@@ -302,7 +302,7 @@ public class Controller {
         target.setExpiryDate(todo.getExpiryDate());
         target.setActivityURL(todo.getActivityURL());
         target.setImageURL(todo.getImageURL());
-        target.setBackGroundColor(todo.getBackGroundColor());
+        target.setBackgroundColor(todo.getBackgroundColor());
     }
 
     /**
@@ -509,7 +509,7 @@ public class Controller {
         if(target == null)
             throw new NoSuchElementException("The target todo " + todoTitle + " does not exist");
 
-        target.setBackGroundColor(backgroundColor);
+        target.setBackgroundColor(backgroundColor);
     }
 
     /**
@@ -600,7 +600,7 @@ public class Controller {
      * @return the new todo instance
      */
     private ToDo fromDTO(ToDoDTO todoDTO) {
-        ToDo todo = new ToDo(todoDTO.getTitle(), todoDTO.getDescription(), todoDTO.getExpiryDate(), todoDTO.getActivityURL(), todoDTO.getImageURL(), todoDTO.getOwner(), todoDTO.getBackGroundColor());
+        ToDo todo = new ToDo(todoDTO.getTitle(), todoDTO.getDescription(), todoDTO.getActivityURL(), todoDTO.getImageURL(), todoDTO.getExpiryDate(), todoDTO.getOwner(), todoDTO.getBackgroundColor());
 
         //Copy the state
         if(todoDTO.isCompleted())

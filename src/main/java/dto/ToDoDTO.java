@@ -23,7 +23,7 @@ public class ToDoDTO {
     private final String activityURL;
     private final String imageURL;
     private final LocalDateTime expiryDate;
-    private final String backGroundColor;
+    private final String backgroundColor;
 
     private final String owner;
     private final List<String> sharedUsers;
@@ -42,10 +42,10 @@ public class ToDoDTO {
 
         this.title = source.getTitle();
         this.description = source.getDescription();
-        this.expiryDate = source.getExpiryDate();
         this.activityURL = source.getActivityURL();
         this.imageURL = source.getImageURL();
-        this.backGroundColor = source.getBackGroundColor();
+        this.expiryDate = source.getExpiryDate();
+        this.backgroundColor = source.getBackgroundColor();
 
         this.owner = source.getOwner();
         this.sharedUsers = List.copyOf(source.getSharedUsers());
@@ -53,17 +53,17 @@ public class ToDoDTO {
 
     /**
      * <p>Instantiates a new, not completed, ToDo DTO with the specified attributes.</p>
+     *
      * @param title           the title
      * @param description     the description
-     * @param expiryDate      the expiry date
      * @param activityURL     the activity url
      * @param imageURL        the image url
+     * @param expiryDate      the expiry date
      * @param ownerUsername   the owner's username
-     * @param backGroundColor the background color
-     *
+     * @param backgroundColor the background color
      * @throws IllegalArgumentException if {@code title} is {@code null} or blank
      */
-    public ToDoDTO(String title, String description, LocalDateTime expiryDate, String activityURL, String imageURL, String ownerUsername, String backGroundColor) {
+    public ToDoDTO(String title, String description, String activityURL, String imageURL, LocalDateTime expiryDate, String ownerUsername, String backgroundColor) {
         if(title == null || title.isBlank())
             throw new IllegalArgumentException("ToDo title cannot be null or blank");
 
@@ -71,10 +71,10 @@ public class ToDoDTO {
 
         this.title = title;
         this.description = description;
-        this.expiryDate = expiryDate;
         this.activityURL = activityURL;
         this.imageURL = imageURL;
-        this.backGroundColor = backGroundColor;
+        this.expiryDate = expiryDate;
+        this.backgroundColor = backgroundColor;
 
         this.owner = ownerUsername;
         this.sharedUsers = null;
@@ -128,7 +128,7 @@ public class ToDoDTO {
      * <p>Gets background color.</p>
      * @return the background color as an hexadecimal RBG string in the "#RRGGBB" format
      */
-    public String getBackGroundColor() { return backGroundColor; }
+    public String getBackgroundColor() { return backgroundColor; }
 
     /**
      * <p>Gets owner.</p>
@@ -166,7 +166,7 @@ public class ToDoDTO {
                 this.expiryDate.equals(todo.getExpiryDate()) &&
                 this.activityURL.equals(todo.getActivityURL()) &&
                 this.imageURL.equals(todo.getImageURL()) &&
-                this.backGroundColor.equals(todo.getBackGroundColor()) &&
+                this.backgroundColor.equals(todo.getBackgroundColor()) &&
                 this.owner.equals(todo.getOwner()) &&
                 this.sharedUsers.equals(todo.getSharedUsers());
 

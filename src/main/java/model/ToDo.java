@@ -19,24 +19,24 @@ public class ToDo {
     private String activityURL;
     private String imageURL;
     private LocalDateTime expiryDate;
-    private String backGroundColor;
+    private String backgroundColor;
 
     private final String owner;
     private final ArrayList<String> sharedUsers;
 
     /**
      * <p>Instantiates a new, not completed, ToDo with the specified attributes.</p>
+     *
      * @param title           the title
      * @param description     the description
-     * @param expiryDate      the expiry date
      * @param activityURL     the activity url
      * @param imageURL        the image url
+     * @param expiryDate      the expiry date
      * @param ownerUsername   the owner's username
-     * @param backGroundColor the background color
-     *
+     * @param backgroundColor the background color
      * @throws IllegalArgumentException if {@code title} is {@code null} or blank
      */
-    public ToDo(String title, String description, LocalDateTime expiryDate, String activityURL, String imageURL, String ownerUsername, String backGroundColor) {
+    public ToDo(String title, String description, String activityURL, String imageURL, LocalDateTime expiryDate, String ownerUsername, String backgroundColor) {
         if(title == null || title.isBlank())
             throw new IllegalArgumentException("ToDo title cannot be null or blank");
 
@@ -45,10 +45,10 @@ public class ToDo {
 
         this.title = title;
         this.description = description;
-        this.expiryDate = expiryDate;
         this.activityURL = activityURL;
         this.imageURL = imageURL;
-        this.backGroundColor = backGroundColor;
+        this.expiryDate = expiryDate;
+        this.backgroundColor = backgroundColor;
 
         this.owner = ownerUsername;
         this.sharedUsers = new ArrayList<String>();
@@ -107,7 +107,7 @@ public class ToDo {
      * <p>Gets background color.</p>
      * @return the background color as an hexadecimal RBG string in the "#RRGGBB" format
      */
-    public String getBackGroundColor() { return backGroundColor; }
+    public String getBackgroundColor() { return backgroundColor; }
 
     /**
      * <p>Gets owner.</p>
@@ -160,9 +160,9 @@ public class ToDo {
 
     /**
      * <p>Sets background color.</p>
-     * @param backGroundColor the background color as an hexadecimal RBG string in the "#RRGGBB" format
+     * @param backgroundColor the background color as an hexadecimal RBG string in the "#RRGGBB" format
      */
-    public void setBackGroundColor(String backGroundColor) { this.backGroundColor = backGroundColor; }
+    public void setBackgroundColor(String backgroundColor) { this.backgroundColor = backgroundColor; }
 
     //User sharing methods
     /**
@@ -230,7 +230,7 @@ public class ToDo {
             }
         }
         sb.append("], ");
-        sb.append("Color: ").append(this.backGroundColor).append(", ");
+        sb.append("Color: ").append(this.backgroundColor).append(", ");
         sb.append("State: ").append(this.state).append("}");
         return sb.toString();
     }

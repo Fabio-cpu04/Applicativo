@@ -83,7 +83,7 @@ class ToDoComponent {
                 GridBagConstraints.LINE_START, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0);
 
         //Calculating properties
-        Color backgroundColor = todo.getBackGroundColor().isEmpty() ? Color.GRAY.brighter() : Color.decode(todo.getBackGroundColor());
+        Color backgroundColor = todo.getBackgroundColor().isEmpty() ? Color.GRAY.brighter() : Color.decode(todo.getBackgroundColor());
         Color textColor = ToDoComponent.isDark(backgroundColor) ? Color.WHITE : Color.BLACK;
 
 
@@ -289,7 +289,7 @@ class ToDoComponent {
         else
             backGroundColor = "#" + Integer.toHexString(color.getRGB()).substring(2); //Converts to hex RGB (color.getRGB() returns in AARRGGBB format)
 
-        return new ToDoDTO(title, description, expiryDate, activityURL, imageURL, Controller.get().getLoggedUser().getUsername(), backGroundColor);
+        return new ToDoDTO(title, description, activityURL, imageURL, expiryDate, Controller.get().getLoggedUser().getUsername(), backGroundColor);
     }
 
     /**
@@ -502,7 +502,7 @@ class ToDoComponent {
         backgroundColorItem.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Color backgroundColor = todo.getBackGroundColor().isEmpty() ? Color.GRAY.brighter() : Color.decode(todo.getBackGroundColor());
+                Color backgroundColor = todo.getBackgroundColor().isEmpty() ? Color.GRAY.brighter() : Color.decode(todo.getBackgroundColor());
                 Color color = JColorChooser.showDialog(mainPanel, "Choose todo's color (optional)", backgroundColor);
 
                 String boardTitle = parentBoardComponent.getBoard().getTitle();

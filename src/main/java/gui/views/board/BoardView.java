@@ -72,6 +72,7 @@ public class BoardView implements GUIView {
         Dimension frameDim = viewerFrame.getSize();
         viewerFrame.setLocation(screenDim.width / 2 - frameDim.width / 2, screenDim.height / 2 - frameDim.height / 2); //Sets position at the center of the screen
         viewerFrame.setVisible(true);
+        viewerFrame.setExtendedState(viewerFrame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
     }
 
     //Methods
@@ -81,7 +82,7 @@ public class BoardView implements GUIView {
         viewerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
-        viewerFrame.setPreferredSize(new Dimension(screenDim.width / 2, screenDim.height / 2));
+        viewerFrame.setPreferredSize(new Dimension(screenDim.width, screenDim.height));
 
         //Create scrollpane and init settings
         JScrollPane scrollPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);

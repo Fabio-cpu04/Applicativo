@@ -1,4 +1,5 @@
 import controller.Controller;
+import database.DatabaseConnection;
 import gui.GUI;
 import model.Noticeboard;
 import model.ToDo;
@@ -70,6 +71,7 @@ public class Main {
         health.addToDo(t13);
 
         //TEMPORARILY INCLUDES A Controller PARAMETER, THIS IS A REPLACEMENT FOR A DATABASE CONNECTION
+        DatabaseConnection.getInstance();
         GUI gui = new GUI();
     }
 }

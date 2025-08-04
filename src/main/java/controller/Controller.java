@@ -1,14 +1,17 @@
 package controller;
 
 //App imports
+import daoPostgresImpl.PostgresUserDAO;
 import model.*;
 import dto.*;
+import database.DatabaseConnection;
 
 //Java imports
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.sql.Connection;
 
 /**
  * <p>The Controller, acts as an interface between the App's state and the GUI.</p>
@@ -25,6 +28,10 @@ public class Controller {
     private Controller() {
         //Setting up state
         this.loggedUser = null;
+
+        Connection con = DatabaseConnection.getInstance().connection;
+        PostgresUserDAO userDAO = new PostgresUserDAO(con);
+        System.out.println(userDAO.authUser("lucia-verdi", "passw0rd!"));
     }
 
 

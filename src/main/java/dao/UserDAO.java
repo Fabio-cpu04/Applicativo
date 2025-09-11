@@ -1,12 +1,24 @@
 package dao;
 
-import java.util.List;
+//Java imports
+import java.util.Map;
 
+//App imports
 import model.User;
 
 public interface UserDAO {
     /**
-     * Checks if the user {@code username} can be authenticated with {@code password} in the system.
+     * <p>Registers a {@link User} to the system.</p>
+     * @param username the User's username
+     * @param password the User's password
+     * @return the User's ID if successful, {@code -1} if the User already exists in the system.
+     *
+     * @throws IllegalArgumentException if {@code username} is not a valid username or if either the username or password are too long
+     * @throws IllegalStateException if a User with the same username exists already
+     */
+    int registerUser(String username, String password);
+     /**
+     * <p>Authenticates the user via its username and password in the system.</p>
      * @param username the user's username
      * @param password the user's password
      * @return the user's id if successful, {@code -1} if the password is incorrect and {@code -2} if the user is not registered in the system.
@@ -14,28 +26,22 @@ public interface UserDAO {
     int authUser(String username, String password);
 
     /**
-     * Gets a List of all the usernames.
-     * @return if successful, a {@link List <String>} of all usernames, otherwise null.
+     * <p>Gets a {@link Map} of all the Users'pairs of usernames|userID.</p>
+     * @return a {@link Map} of all usernames|userIDs.
      */
-    List<String> getUserList();
-    /**
-     * Gets and parses a model User identified by {@code username}.
-     * @param username the user's username
-     * @return the user, otherwise {@code null}.
-     */
-    User getUserByUsername(String username);
+    Map<String, Integer> getUsers();
 
     /**
-     * Adds a user to the system, identified by its username {@code username} and its password {@code password}
-     * @param username the user's username
-     * @param password the user's password
-     * @return {@code 0} if successful, else returns {@code -1} if the user already exists in the system.
+     * <p>Checks if a User exists.</p>
+     * @param username the User's username
+     * @return if found returns the User's userID, otherwise returns {@code -1}
      */
-    int addUser(String username, String password);
+    int userExists(String username);
+
     /**
-     * Removes a user from the system, identified by its username {@code username}
-     * @param username the user's username
-     * @return {@code 0} if successful, else returns {@code -1} if the user does not exist in the system.
+     * <p>Gets a User.</p>
+     * @param userID the user's ID
+     * @return the user, otherwise {@code null}.
      */
-    int removeUser(String username);
+    User getUserMetadata(int userID);
 }

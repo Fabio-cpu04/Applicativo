@@ -1,14 +1,11 @@
 package gui.views;
 
-import javax.swing.*;
-
 /**
- * A common interface for all the views of the GUI.
+ * <p>A common interface for all the views of the GUI.</p>
  */
-//Serves as a common parent for all implemented menus.
 public interface GUIView {
     /**
-     * Disposes the view.
+     * <p>Disposes the view.</p>
      */
-    public void disposeView();
+    void disposeView();
 }

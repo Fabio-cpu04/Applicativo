@@ -1,17 +1,14 @@
-package gui.views.board;
+package gui.components;
 
 //Java imports
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-//App imports
-
-
 /**
- * The ListComponent GUI component, displays a list of {@link String} elements.
+ * <p>The ListComponent GUI component, displays a list of {@link String} elements.</p>
  */
-class ListComponent {
+public class ListComponent {
     //Members
     private final JList<String> list;
     private final DefaultListModel<String> listModel;
@@ -20,38 +17,30 @@ class ListComponent {
     private final JPanel mainPanel;
 
     //Getters and Setters
-
     /**
-     * Gets frame.
-     * @return the component's frame
-     */
-    public JFrame getFrame() { return frame; };
-
-    /**
-     * Gets panel.
+     * <p>Gets panel.</p>
      * @return the component's panel
      */
     public JPanel getPanel() { return mainPanel; };
 
     /**
-     * Gets list.
+     * <p>Gets list.</p>
      * @return the component's Jlist
      */
     public JList<String> getList() { return list; }
 
     /**
-     * Gets model.
+     * <p>Gets model.</p>
      * @return the list's model
      */
     public DefaultListModel<String> getModel() { return listModel; }
 
     //Constructor
-
     /**
-     * Instantiates a new ListComponent that displays {@code items}.
+     * <p>Instantiates a new ListComponent that displays the specified items.</p>
      * @param items the items, wrapped in a {@link List} of {@link String}
      */
-    /* package */ ListComponent(List<String> items) {
+    public ListComponent(List<String> items) {
         //Create new JFrame
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -81,7 +70,7 @@ class ListComponent {
 
     //Methods
     /**
-     * Reloads the gui component.
+     * <p>Reloads the ListComponent.</p>
      */
     public void reloadGUIComponent() {
         frame.pack();
@@ -90,6 +79,9 @@ class ListComponent {
         frame.setVisible(true);
     }
 
+    /**
+     * <p>Disposes of the ListComponent</p>
+     */
     public void dispose() {
         frame.dispose();
     }

@@ -1,19 +1,20 @@
 package model;
 
-import java.lang.String;
+//Java imports
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * <p>A ToDo in the model, identified by its title.</p>
+ * <p>A ToDo in the model.</p>
  * <p>The class provides methods to manage the ToDo's state, attributes and its user sharing status.</p>
  */
 public class ToDo {
-    private enum ToDoState { Completed, NotCompleted }
+    private enum ToDoState { COMPLETED, NOTCOMPLETED }
 
     //Members
+    private final int todoID;
     private ToDoState state;
-
     private String title;
     private String description;
     private String activityURL;
@@ -21,37 +22,43 @@ public class ToDo {
     private LocalDateTime expiryDate;
     private String backgroundColor;
 
-    private final String owner;
+    private final int ownerUserID;
     private final ArrayList<String> sharedUsers;
 
     /**
      * <p>Instantiates a new, not completed, ToDo with the specified attributes.</p>
-     *
+     * @param todoID          the id
+     * @param completed       the completion state as a boolean ({@code true} for Complete, {@code false} for Not Complete)
      * @param title           the title
      * @param description     the description
      * @param activityURL     the activity url
      * @param imageURL        the image url
      * @param expiryDate      the expiry date
-     * @param ownerUsername   the owner's username
+     * @param ownerUserID   the owner's username
      * @param backgroundColor the background color
+     *
      * @throws IllegalArgumentException if {@code title} is {@code null} or blank
      */
-    public ToDo(String title, String description, String activityURL, String imageURL, LocalDateTime expiryDate, String ownerUsername, String backgroundColor) {
+    public ToDo(int todoID, boolean completed, String title, String description, String activityURL, String imageURL, LocalDateTime expiryDate, int ownerUserID, String backgroundColor) {
+        if(todoID < 0)
+            throw new IllegalArgumentException("ToDo ID cannot be negative");
         if(title == null || title.isBlank())
             throw new IllegalArgumentException("ToDo title cannot be null or blank");
 
         //Setting up ToDo attributes
-        this.state = ToDoState.NotCompleted;
+        this.todoID = todoID;
+
+        this.state = completed ? ToDoState.COMPLETED : ToDoState.NOTCOMPLETED;
 
         this.title = title;
-        this.description = description;
-        this.activityURL = activityURL;
-        this.imageURL = imageURL;
+        this.description = description == null ? "" : description;
+        this.activityURL = activityURL == null ? "" : activityURL;
+        this.imageURL = imageURL == null ? "" : imageURL;
         this.expiryDate = expiryDate;
-        this.backgroundColor = backgroundColor;
+        this.backgroundColor = backgroundColor == null ? "" : backgroundColor;
 
-        this.owner = ownerUsername;
-        this.sharedUsers = new ArrayList<String>();
+        this.ownerUserID = ownerUserID;
+        this.sharedUsers = new ArrayList<>();
     }
 
     //ToDo State methods
@@ -59,70 +66,81 @@ public class ToDo {
      * <p>Checks if ToDo is expired.</p>
      * @return returns {@code true} if ToDo's expiry date is past the current date and time, otherwise {@code false}
      */
-    public boolean isExpired() { return LocalDateTime.now().isAfter(expiryDate); }
+    public boolean isExpired() {
+        if(expiryDate == null)
+            return false;
+
+        return LocalDateTime.now().isAfter(expiryDate);
+    }
 
     /**
-     * <p>Checks if todo is completed.</p>
-     * @return returns {@code true} if ToDo's {@code state == ToDoState.Completed}, otherwise {@code false}
+     * <p>Checks if ToDo is completed.</p>
+     * @return returns {@code true} if ToDo is completed, otherwise {@code false}
      */
-    public boolean isCompleted() { return state == ToDoState.Completed; }
+    public boolean isCompleted() { return state == ToDoState.COMPLETED; }
 
     /**
-     * <p>Changes ToDo state from non completed to completed and vice versa.</p>
+     * <p>Changes ToDo state from not completed to completed and vice versa.</p>
      */
-    public void changeCompletionState() { this.state = this.isCompleted() ? ToDoState.NotCompleted: ToDoState.Completed; }
+    public void changeCompletionState() { this.state = this.isCompleted() ? ToDoState.NOTCOMPLETED: ToDoState.COMPLETED; }
 
     //Getter & Setter methods
     /**
-     * <p>Gets title.</p>
+     * <p>Gets the ToDo's ID.</p>
+     * @return the ID
+     */
+    public int getToDoID() { return todoID; }
+
+    /**
+     * <p>Gets the ToDo's title.</p>
      * @return the title
      */
     public String getTitle() { return title; }
 
     /**
-     * <p>Gets description.</p>
+     * <p>Gets the ToDo's description.</p>
      * @return the description
      */
     public String getDescription() { return description; }
 
     /**
-     * <p>Gets expiry date.</p>
+     * <p>Gets the ToDo's expiry date.</p>
      * @return the expiry date
      */
     public LocalDateTime getExpiryDate() { return expiryDate; }
 
     /**
-     * <p>Gets activity url.</p>
+     * <p>Gets the ToDo's activity url.</p>
      * @return the activity url
      */
     public String getActivityURL() { return activityURL; }
 
     /**
-     * <p>Gets image url.</p>
+     * <p>Gets the ToDo's image url.</p>
      * @return the image url
      */
     public String getImageURL() { return imageURL; }
 
     /**
-     * <p>Gets background color.</p>
+     * <p>Gets the ToDo's background color.</p>
      * @return the background color as an hexadecimal RBG string in the "#RRGGBB" format
      */
     public String getBackgroundColor() { return backgroundColor; }
 
     /**
-     * <p>Gets owner.</p>
-     * @return the owner
+     * <p>Gets the ToDo's owner User's ID.</p>
+     * @return the ID
      */
-    public String getOwner() { return owner; }
+    public int getOwnerUserID() { return ownerUserID; }
 
     /**
-     * <p>Gets shared users.</p>
-     * @return the shared users usernames, wrapped in a {@link ArrayList} of {@link String}
+     * <p>Gets the ToDo's shared Users.</p>
+     * @return the shared Users' usernames, as a {@link List} of {@link String}
      */
-    public ArrayList<String> getSharedUsers() { return sharedUsers; }
+    public List<String> getSharedUsers() { return sharedUsers; }
 
     /**
-     * <p>Sets title.</p>
+     * <p>Sets the ToDo's title.</p>
      * @param title the title
      *
      * @throws IllegalArgumentException if {@code title} is {@code null} or blank
@@ -135,38 +153,38 @@ public class ToDo {
     }
 
     /**
-     * <p>Sets description.</p>
+     * <p>Sets the ToDo's description.</p>
      * @param description the description
      */
     public void setDescription(String description) { this.description = description; }
 
     /**
-     * <p>Sets expiry date.</p>
+     * <p>Sets the ToDo's expiry date.</p>
      * @param expiryDate the expiry date
      */
     public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
 
     /**
-     * <p>Sets activity url.</p>
+     * <p>Sets the ToDo's activity url.</p>
      * @param activityURL the activity url
      */
     public void setActivityURL(String activityURL) { this.activityURL = activityURL; }
 
     /**
-     * <p>Sets image url.</p>
+     * <p>Sets the ToDo's image url.</p>
      * @param imageURL the image url
      */
     public void setImageURL(String imageURL) { this.imageURL = imageURL; }
 
     /**
-     * <p>Sets background color.</p>
+     * <p>Sets the ToDo's background color.</p>
      * @param backgroundColor the background color as an hexadecimal RBG string in the "#RRGGBB" format
      */
     public void setBackgroundColor(String backgroundColor) { this.backgroundColor = backgroundColor; }
 
     //User sharing methods
     /**
-     * <p>Checks if ToDo is shared with the user identified by {@code username}.</p>
+     * <p>Checks if the ToDo is shared with an User.</p>
      * @param username the username
      * @return {@code true} if shared, else {@code false}
      */
@@ -175,7 +193,7 @@ public class ToDo {
     }
 
     /**
-     * <p>Shares the ToDo with the user identified by {@code username}.</p>
+     * <p>Shares the ToDo with an User.</p>
      * @param username the username
      * @return returns {@code 0} if successful, returns {@code -1} if ToDo is already shared with {@code user}
      *
@@ -193,7 +211,7 @@ public class ToDo {
     }
 
     /**
-     * <p>Unshares the ToDo with {@code username}.</p>
+     * <p>Unshares the ToDo with an User.</p>
      * @param username the username
      * @return returns {@code 0} if successful, returns {@code -1} if ToDo isn't shared with the user
      *
@@ -214,12 +232,14 @@ public class ToDo {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
+        sb.append("ID: ").append(this.todoID).append(", ");
+        sb.append("State: ").append(this.state).append(", ");
         sb.append("Title: ").append(this.title).append(", ");
         sb.append("Description: ").append(this.description).append(", ");
         sb.append("Expiration: ").append(this.expiryDate).append(", ");
         sb.append("ActivityURL: ").append(this.activityURL).append(", ");
         sb.append("ImageURL:").append(this.imageURL).append(", ");
-        sb.append("Owner: ").append(this.owner).append(", ");
+        sb.append("Owner: ").append(this.ownerUserID).append(", ");
         sb.append("Shared Users: [");
         if(this.sharedUsers != null) {
             for (int i = 0; i < this.sharedUsers.size(); i++) {
@@ -230,8 +250,7 @@ public class ToDo {
             }
         }
         sb.append("], ");
-        sb.append("Color: ").append(this.backgroundColor).append(", ");
-        sb.append("State: ").append(this.state).append("}");
+        sb.append("Color: ").append(this.backgroundColor).append("}");
         return sb.toString();
     }
 }

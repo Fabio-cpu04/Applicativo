@@ -1,50 +1,72 @@
 package model;
 
-import java.lang.String;
+//Java imports
 import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * <p>A Noticeboard in the model, identified by its title.</p>
- * <p>Every user has a collection of displayed {@link ToDo}.</p>
+ * <p>A Noticeboard in the model.</p>
+ * <p>Every Noticeboard has a collection of displayed {@link ToDo}.</p>
  * <p>The class provides methods to retrieve, add and remove the displayed ToDos.</p>
  */
 public class Noticeboard {
+    private final int boardID;
     private String title;
     private String description;
+    private final int userID;
+
     private final ArrayList<ToDo> todos;
 
     /**
      * <p>Instantiates a new Noticeboard with no todos.</p>
+     * @param boardID the id
      * @param title the title
      * @param description the description
+     * @param userID the owner user's ID
      *
      * @throws IllegalArgumentException if {@code title} is {@code null} or blank
      */
-    public Noticeboard(String title, String description) {
+    public Noticeboard(int boardID, String title, String description, int userID) {
+        if(boardID < 0)
+            throw new IllegalArgumentException("Board ID cannot be negative");
         if(title == null || title.isBlank())
             throw new IllegalArgumentException("Noticeboard title cannot be null or blank");
 
+        this.boardID = boardID;
         this.title = title;
         this.description = description;
-        this.todos = new ArrayList<ToDo>();
+        this.userID = userID;
+        this.todos = new ArrayList<>();
     }
 
     //Getter & Setter methods
     /**
-     * <p>Gets title.</p>
+     * <p>Gets the Noticeboard's ID.</p>
+     * @return the id
+     */
+    public int getBoardID() { return boardID; }
+
+    /**
+     * <p>Gets the Noticeboard'stitle.</p>
      * @return the title
      */
     public String getTitle() { return title; }
 
     /**
-     * <p>Gets description.</p>
+     * <p>Gets the Noticeboard'sdescription.</p>
      * @return the description
      */
     public String getDescription() { return description; }
 
     /**
-     * <p>Sets title.</p>
+     * <p>Gets the Noticeboard's owner User's ID</p>
+     * @return the ID
+     */
+    public int getUserID() { return userID; }
+
+    /**
+     * <p>Sets the Noticeboard's title.</p>
      * @param title the title
      *
      * @throws IllegalArgumentException if {@code title} is {@code null} or blank
@@ -57,28 +79,28 @@ public class Noticeboard {
     }
 
     /**
-     * <p>Sets description.</p>
+     * <p>Sets the Noticeboard's description.</p>
      * @param description the description
      */
     public void setDescription(String description) { this.description = description; }
 
     //ToDo methods
     /**
-     * <p>Gets the todos.</p>
-     * @return the todos, wrapped in a {@link ArrayList} of {@link ToDo}
+     * <p>Gets the Noticeboard's {@link ToDo}s.</p>
+     * @return the ToDos, as a {@link List} of {@link ToDo}
      */
-    public ArrayList<ToDo> getToDos() { return todos; }
+    public List<ToDo> getToDos() { return todos; }
 
     /**
-     * <p>Gets the count of todos.</p>
-     * @return the count of todos
+     * <p>Gets the count of ToDos.</p>
+     * @return the count of ToDos
      */
     public int getToDoCount() { return todos.size(); }
 
     /**
-     * <p>Gets ToDo from its title.</p>
+     * <p>Gets a ToDo from its title.</p>
      * @param title the title
-     * @return the todo if the noticeboard displays it, {@code null} otherwise
+     * @return the ToDo if the Noticeboard displays it, {@code null} otherwise
      */
     public ToDo getToDo(String title){
         return todos.stream().filter(todo -> todo.getTitle().equals(title))
@@ -86,28 +108,38 @@ public class Noticeboard {
     }
 
     /**
-     * <p>Adds ToDo to the noticeboard.</p>
-     * @param todo the todo
+     * <p>Gets a ToDo from its ID.</p>
+     * @param todoID the ID
+     * @return the ToDo if the Noticeboard displays it, {@code null} otherwise
+     */
+    public ToDo getToDo(int todoID){
+        return todos.stream().filter(todo -> todo.getToDoID() == todoID)
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * <p>Adds ToDo to the Noticeboard.</p>
+     * @param todo the ToDo
      *
      * @throws IllegalArgumentException if {@code todo} is {@code null}
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws IllegalStateException if a ToDo with the same title already exists in the board
+     * @throws NoSuchElementException if the Noticeboard does not exist
+     * @throws IllegalStateException if a ToDo with the same title already exists in the Noticeboard
      */
     public void addToDo(ToDo todo){
         if(todo == null)
             throw new IllegalArgumentException("Cannot add a null ToDo to a Noticeboard");
 
-        if(this.getToDo(todo.getTitle()) != null) //ToDo exists already
+        if(this.getToDo(todo.getToDoID()) != null) //ToDo exists already
             throw new IllegalStateException("A ToDo with the same title exists already, duplicate titles are not allowed");
 
         todos.add(todo);
     }
 
     /**
-     * <p>Deletes ToDo from the noticeboard.</p>
+     * <p>Deletes a ToDo from the Noticeboard.</p>
      * @param title the title
      *
-     * @throws NoSuchElementException if the todo does not exist
+     * @throws NoSuchElementException if the ToDo does not exist
      */
     public void deleteToDo(String title){
         ToDo todo = this.getToDo(title);
@@ -117,10 +149,25 @@ public class Noticeboard {
         todos.remove(todo);
     }
 
+    /**
+     * <p>Deletes a ToDo from the Noticeboard.</p>
+     * @param todoID the ID
+     *
+     * @throws NoSuchElementException if the ToDo does not exist
+     */
+    public void deleteToDo(int todoID){
+        ToDo todo = this.getToDo(todoID);
+        if(todo == null)
+            throw new NoSuchElementException("Cannot remove ToDo-" + todoID + ", it does not exist");
+
+        todos.remove(todo);
+    }
+
     @Override
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("Board{");
+        sb.append("ID=").append(boardID).append(", ");
         sb.append("Title: ").append(this.title).append(", ");
         sb.append("Description: ").append(this.description).append(", ");
         sb.append("ToDos: [");

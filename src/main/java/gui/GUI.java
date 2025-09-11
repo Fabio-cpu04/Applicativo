@@ -3,33 +3,37 @@ package gui;
 //App imports
 import controller.Controller;
 
-import gui.views.*;
+import gui.views.GUIView;
+import gui.views.home.HomeView;
 import gui.views.board.BoardView;
 
 /**
- * A global GUI interface, controls which GUI view is displayed.
+ * <p>The GUI, controls which View is displayed.</p>
+ *
+ * @see GUIView GUIView
+ * @see HomeView HomeView
+ * @see HomeView BoardView
  */
 public class GUI {
     private GUIView currentView;
 
     //Constructor
     /**
-     * Initializes a new GUI, with an initial window prompting for user login or signup.
+     * <p>Initializes a new GUI, with an initial window prompting for user login or signup.</p>
      */
     public GUI(){
         //Setting up state
         this.currentView = null;
 
         //Initializing HomeView
-        swapAndDisposeView(new HomeView());
-
-        if(Controller.get().isUserLogged())
-            swapAndDisposeView(new BoardView());
+        //swapAndDisposeView(new HomeView(this));
+        Controller.getInstance().authenticateUser("admin", "admin");
+        swapAndDisposeView(new BoardView());
     }
 
     //Methods
     /**
-     * Disposes the current GUI view and replaces it with another one.
+     * <p>Disposes the current View and replaces it with another.</p>
      * @param view the new view
      */
     public void swapAndDisposeView(GUIView view) {

@@ -1,11 +1,8 @@
 package gui;
 
 //App imports
-import controller.Controller;
-
 import gui.views.GUIView;
 import gui.views.homeview.HomeView;
-import gui.views.boardview.BoardView;
 
 /**
  * <p>The GUI, controls which View is displayed.</p>
@@ -27,8 +24,6 @@ public class GUI {
 
         //Initializing HomeView
         swapAndDisposeView(new HomeView(this));
-        //Controller.getInstance().authenticateUser("admin", "admin");
-        //swapAndDisposeView(new BoardView());
     }
 
     //Methods

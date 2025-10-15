@@ -1,4 +1,4 @@
-package gui.views.board.forms;
+package gui.components.forms;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -14,7 +14,10 @@ import java.util.regex.Pattern;
 
 import dto.NoticeboardDTO;
 
-public class BoardForm extends JDialog{
+/**
+ * <p>A class that spawns a Form to insert information about a {@link model.Noticeboard}</p>
+ */
+public class NoticeboardForm extends JDialog {
     //GUI variables
     private JPanel mainPanel;
 
@@ -43,10 +46,10 @@ public class BoardForm extends JDialog{
 
     //Constructor
     /**
-     * <p>Instantiates a new BoardForm.</p>
+     * <p>Instantiates a new NoticeboardForm.</p>
      * @param sourceNoticeboard influences the appearance and behavior of the form, set a {@link NoticeboardDTO} if an existing Noticeboard needs to be edited, set {@code null} if a new Noticeboard needs to be created
      */
-    public BoardForm(NoticeboardDTO sourceNoticeboard){
+    public NoticeboardForm(NoticeboardDTO sourceNoticeboard){
         //Initialization
         this.setContentPane(mainPanel);
         this.setModal(true);
@@ -145,7 +148,7 @@ public class BoardForm extends JDialog{
 
     //Methods
     /**
-     * <p>Shows the BoardForm to the user and builds a {@link NoticeboardDTO} from user input.</p>
+     * <p>Shows the NoticeboardForm to the user and builds a {@link NoticeboardDTO} from user input.</p>
      * @return if the inserted input is valid, returns its corresponding {@link NoticeboardDTO} object, otherwise returns {@code null}
      */
     public NoticeboardDTO showBoardForm(){

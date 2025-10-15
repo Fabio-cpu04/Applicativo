@@ -6,6 +6,9 @@ import java.util.Map;
 //App imports
 import model.User;
 
+/**
+ * <p>Manages the fundamental Database operations for {@link User} objects.</p>
+ */
 public interface UserDAO {
     /**
      * <p>Registers a {@link User} to the system.</p>

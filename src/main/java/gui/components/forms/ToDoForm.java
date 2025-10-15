@@ -1,11 +1,10 @@
-package gui.views.board.forms;
+package gui.components.forms;
 
 //Java imports
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.text.DateFormatter;
 import javax.swing.text.DefaultFormatter;
 import javax.swing.text.DefaultFormatterFactory;
 
@@ -15,7 +14,6 @@ import java.awt.event.MouseEvent;
 
 import java.text.ParseException;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -26,7 +24,7 @@ import java.util.regex.Pattern;
 import dto.ToDoDTO;
 
 /**
- * <p>A class that creates a Form to insert information about a ToDo</p>
+ * <p>A class that spawns a Form to insert information about a {@link model.ToDo}</p>
  */
 public class ToDoForm extends JDialog{
     //GUI variables

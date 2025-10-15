@@ -1,4 +1,4 @@
-package gui.views.board;
+package gui.views.boardview;
 
 //Java imports
 import javax.swing.*;
@@ -28,7 +28,7 @@ import controller.Controller;
 import dto.*;
 
 import gui.components.ListComponent;
-import gui.views.board.forms.ToDoForm;
+import gui.components.forms.ToDoForm;
 
 /**
  * <p>Represents a {@link model.ToDo} in the GUI.</p>
@@ -277,12 +277,12 @@ class ToDoComponent {
         //ToDo edit section
         JMenuItem editItem = new JMenuItem("Edit ToDo");
         //Todo sharing state section
-        JMenuItem sharedUsersItem = new JMenuItem("Show users who share this ToDo");
-        JMenuItem addSharedUserItem = new JMenuItem("Share with user");
-        JMenuItem removeSharedUserItem = new JMenuItem("Unshare with user");
+        JMenuItem sharedUsersItem = new JMenuItem("Show the Users who share this ToDo");
+        JMenuItem addSharedUserItem = new JMenuItem("Share ToDo with a User");
+        JMenuItem removeSharedUserItem = new JMenuItem("Unshare ToDo with a User");
         //Todo positioning section
-        JMenuItem changePositionItem = new JMenuItem("Change position");
-        JMenuItem changeBoardItem = new JMenuItem("Move ToDo to board");
+        JMenuItem changePositionItem = new JMenuItem("Change the ToDo's position in the Noticeboard");
+        JMenuItem changeBoardItem = new JMenuItem("Move ToDo to a new Noticeboard");
         //ToDo delete section
         JMenuItem deleteItem = new JMenuItem("Delete ToDo");
 
@@ -371,7 +371,7 @@ class ToDoComponent {
             popup.add(deleteItem);
         }
         else
-            popup.add(changePositionItem); //Otherwise only add the option to show Users who share the ToDo
+            popup.add(sharedUsersItem); //Otherwise only add the option to show Users who share the ToDo
 
         return popup;
     }

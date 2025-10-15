@@ -1,4 +1,4 @@
-package gui.views.board;
+package gui.views.boardview;
 
 //Java imports
 import java.util.List;

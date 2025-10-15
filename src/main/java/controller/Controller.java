@@ -648,6 +648,7 @@ public class Controller {
 
     /**
      * <p>Moves a ToDo from its original Noticeboard to another</p>
+     * @param boardID the Noticeboard's ID
      * @param todoID the ToDo's ID
      * @param newBoardID the new Noticeboard's ID
      *
@@ -683,7 +684,7 @@ public class Controller {
     /**
      * <p>Loads the Noticeboards and ToDos of a User.</p>
      * @param userID the user's ID
-     * @param boards a {@link List} object to load the {@link Noticeboard} objects into (it'll be cleared if not empty)
+     * @param boards an empty mutable {@link List} object to load the {@link Noticeboard} objects into
      */
     private void loadUserNoticeboards(int userID, List<Noticeboard> boards) {
         //Clear any data
@@ -692,8 +693,8 @@ public class Controller {
         //Load User's Noticeboards&ToDos
         Connection con = DatabaseConnection.getInstance().getConnection();
 
-        PostgresNoticeboardDAO boardDAO = new PostgresNoticeboardDAO(con);
-        PostgresSharingDAO sharingDAO = new PostgresSharingDAO(con);
+        NoticeboardDAO boardDAO = new PostgresNoticeboardDAO(con);
+        SharingDAO sharingDAO = new PostgresSharingDAO(con);
 
         boardDAO.loadNoticeboardsByUserID(userID, boards);
         sharingDAO.loadSharedNoticeboardsByUserID(userID, boards);

@@ -4,7 +4,6 @@ package dao;
 import java.time.LocalDateTime;
 
 import java.util.List;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 //App imports
@@ -43,6 +42,7 @@ public interface ToDoDAO {
      * <p>Adds a ToDo to the system.</p>
      * @param todo the corresponding {@link ToDoDTO} object
      * @param boardID the target Noticeboard's ID
+     * @param boardIndex the target index in the Noticeboard
      * @return the ToDo's ID if successful, otherwise returns {@code -1}.
      *
      * @throws NoSuchElementException if no Noticeboard with the ID {@code boardID} exists

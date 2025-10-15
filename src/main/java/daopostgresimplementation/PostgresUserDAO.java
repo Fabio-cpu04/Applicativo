@@ -44,12 +44,6 @@ public class PostgresUserDAO implements UserDAO {
             resSet.next();
 
             int userID = resSet.getInt(1);
-
-            PostgresNoticeboardDAO n = new PostgresNoticeboardDAO(connection);
-            n.addNoticeboard("Tempo libero","Attivita ed Hobby da svolgere durante il tempo Libero", userID);
-            n.addNoticeboard("Lavoro","Task da svolgere durante in orario di Lavoro", userID);
-            n.addNoticeboard("Universita","Studio, Homework e Progetti.", userID);
-
             return userID;
         } catch (SQLException e) {
             e.printStackTrace();

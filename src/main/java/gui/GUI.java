@@ -4,8 +4,8 @@ package gui;
 import controller.Controller;
 
 import gui.views.GUIView;
-import gui.views.home.HomeView;
-import gui.views.board.BoardView;
+import gui.views.homeview.HomeView;
+import gui.views.boardview.BoardView;
 
 /**
  * <p>The GUI, controls which View is displayed.</p>
@@ -26,9 +26,9 @@ public class GUI {
         this.currentView = null;
 
         //Initializing HomeView
-        //swapAndDisposeView(new HomeView(this));
-        Controller.getInstance().authenticateUser("admin", "admin");
-        swapAndDisposeView(new BoardView());
+        swapAndDisposeView(new HomeView(this));
+        //Controller.getInstance().authenticateUser("admin", "admin");
+        //swapAndDisposeView(new BoardView());
     }
 
     //Methods
@@ -41,5 +41,14 @@ public class GUI {
             currentView.disposeView();
 
         currentView = view;
+    }
+
+    //Main method
+    /**
+     * The Main function of the App, spawns a {@link GUI}.
+     * @param args unused main arguments
+     */
+    public static void main(String[] args) {
+        new GUI();
     }
 }

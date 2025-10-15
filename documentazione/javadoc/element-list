@@ -1,0 +1,12 @@
+controller
+dao
+daopostgresimplementation
+database
+dto
+gui
+gui.components
+gui.components.forms
+gui.views
+gui.views.boardview
+gui.views.homeview
+model

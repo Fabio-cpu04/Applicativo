@@ -1,4 +1,4 @@
-package gui.views.board;
+package gui.views.boardview;
 
 //Java imports
 import javax.swing.*;
@@ -13,11 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 //App imports
+import gui.components.forms.NoticeboardForm;
 import gui.views.GUIView;
 
 import controller.Controller;
 
-import gui.views.board.forms.BoardForm;
 import gui.components.ListComponent;
 
 import dto.NoticeboardDTO;
@@ -112,7 +112,7 @@ public class BoardView implements GUIView {
         JMenuBar menuBar = new JMenuBar();
         JMenu noticeboardsMenu = new JMenu("Noticeboards");
         JMenu userMenu = new JMenu("Search ToDos");
-        JMenu viewMenu = new JMenu("View");
+        JMenu viewMenu = new JMenu("View Settings");
 
         //Noticeboard menu options
         JMenuItem newNoticeboardItem = new JMenuItem("New Noticeboard");
@@ -206,7 +206,7 @@ public class BoardView implements GUIView {
     //Menu helpers
     private void newNoticeboardAction() {
         //Get user input data
-        BoardForm form = new BoardForm(null);
+        NoticeboardForm form = new NoticeboardForm(null);
         NoticeboardDTO formBoard = form.showBoardForm();
         if(formBoard == null)
             return;
@@ -251,8 +251,8 @@ public class BoardView implements GUIView {
                 int index = list.getList().getSelectedIndex();
                 NoticeboardDTO oldBoard = boards.get(index);
 
-                //Get board from BoardForm
-                BoardForm form = new BoardForm(oldBoard);
+                //Get board from NoticeboardForm
+                NoticeboardForm form = new NoticeboardForm(oldBoard);
                 NoticeboardDTO formBoard = form.showBoardForm();
                 if(formBoard == null)
                     return;
@@ -337,23 +337,21 @@ public class BoardView implements GUIView {
         boolean validInput = false;
         while(!validInput) {
             dateString = JOptionPane.showInputDialog(mainPanel, "Insert a date (use the following format \"dd/mm/yyyy\", leave blank to see all unexpired ToDos)", "", JOptionPane.PLAIN_MESSAGE);
-            if(dateString == null) {
+            if(dateString == null)
                 return;
-            }
-            else {
-                validInput = true;
 
-                if(dateString.isEmpty())
-                    date = LocalDate.MAX;
-                else
-                {
-                    try {
-                        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                        date = LocalDate.parse(dateString, format);
-                    }
-                    catch (DateTimeParseException _) {
-                        validInput = false;
-                    }
+            validInput = true;
+
+            if(dateString.isEmpty())
+                date = LocalDate.MAX;
+            else
+            {
+                try {
+                    DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    date = LocalDate.parse(dateString, format);
+                }
+                catch (DateTimeParseException _) {
+                    validInput = false;
                 }
             }
         }
@@ -370,6 +368,7 @@ public class BoardView implements GUIView {
                 }
             }
         }
+
         new ListComponent(expiringAtDate.stream().toList()); //Spawn ListComponent
     }
 

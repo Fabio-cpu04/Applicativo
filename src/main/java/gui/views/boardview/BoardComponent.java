@@ -1,4 +1,4 @@
-package gui.views.board;
+package gui.views.boardview;
 
 //Java imports
 import javax.swing.*;
@@ -14,7 +14,7 @@ import java.util.List;
 import controller.Controller;
 import dto.NoticeboardDTO;
 import dto.ToDoDTO;
-import gui.views.board.forms.ToDoForm;
+import gui.components.forms.ToDoForm;
 
 /**
  * <p>Represents a {@link model.Noticeboard} in the GUI.</p>
@@ -109,21 +109,7 @@ class BoardComponent {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                try {
-                    ToDoForm form = new ToDoForm(null);
-                    ToDoDTO todo = form.showToDoForm();
-
-                    if (todo != null) {
-                        //Sync App state
-                        ToDoDTO todoToAdd = new ToDoDTO(-1, todo.isCompleted(), todo.getTitle(), todo.getDescription(), todo.getActivityURL(), todo.getImageURL(), todo.getExpiryDate(), Controller.getInstance().getLoggedUser().getUserID(), todo.getBackgroundColor());
-                        Controller.getInstance().addToDo(board.getBoardID(), todoToAdd);
-
-                        //Sync GUI state
-                        reloadToDoComponent();
-                    }
-                } catch (IllegalStateException _) {
-                    JOptionPane.showMessageDialog(mainPanel, "Couldn't add ToDo, a ToDo with the same title exists already.");
-                }
+                addToDoAction();
                 }
             });
         }
@@ -152,6 +138,24 @@ class BoardComponent {
 
         todoPanel.revalidate();
         todoPanel.repaint();
+    }
+
+    private void addToDoAction() {
+        try {
+            ToDoForm form = new ToDoForm(null);
+            ToDoDTO todo = form.showToDoForm();
+
+            if (todo != null) {
+                //Sync App state
+                ToDoDTO todoToAdd = new ToDoDTO(-1, todo.isCompleted(), todo.getTitle(), todo.getDescription(), todo.getActivityURL(), todo.getImageURL(), todo.getExpiryDate(), Controller.getInstance().getLoggedUser().getUserID(), todo.getBackgroundColor());
+                Controller.getInstance().addToDo(board.getBoardID(), todoToAdd);
+
+                //Sync GUI state
+                reloadToDoComponent();
+            }
+        } catch (IllegalStateException _) {
+            JOptionPane.showMessageDialog(mainPanel, "Couldn't add ToDo, a ToDo with the same title exists already.");
+        }
     }
 
     /**

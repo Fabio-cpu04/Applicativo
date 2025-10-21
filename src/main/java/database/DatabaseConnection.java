@@ -16,17 +16,21 @@ public class DatabaseConnection {
 
     private static final String POSTGRES_USERNAME = "postgres";
     private static final String POSTGRES_PASSWORD = "password";
-    private static final String POSTGRES_URL = "jdbc:postgresql://localhost:5432/";
+    private static final String POSTGRES_URL = "jdbc:postgresql://localhost:5432/postgres";
+    private static final String DRIVER = "org.postgresql.Driver";
 
     /**
      * <p>Private Constructor for DatabaseConnection, sets up a PostgreSQL driver and tries to get a connection.</p>
      */
     private DatabaseConnection() {
         try {
+            Class.forName(DRIVER);
             connection = DriverManager.getConnection(POSTGRES_URL, POSTGRES_USERNAME, POSTGRES_PASSWORD);
         }
         catch (SQLException sqlex){
             Logger.getLogger(DatabaseConnection.class.getName()).log(Level.SEVERE, "Could not connect to the PostgreSQL database.", sqlex);
+        } catch (ClassNotFoundException e) {
+            Logger.getLogger(DatabaseConnection.class.getName()).log(Level.SEVERE, "Could not find JDBC driver.");
         }
     }
 

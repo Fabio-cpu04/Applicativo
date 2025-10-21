@@ -88,7 +88,7 @@ public class ToDoForm extends JDialog{
         //Choose appropriate border title and fill in fields from an existing ToDo
         String title = null;
         if(sourceToDo == null) {
-            title = "New Noticeboard";
+            title = "New ToDo";
             notCompleteRadioButton.setSelected(true);
             titleField.setValue("");
             descriptionField.setText("");
@@ -101,7 +101,7 @@ public class ToDoForm extends JDialog{
             this.todoID = sourceToDo.getToDoID();
             this.ownerUserID = sourceToDo.getOwnerUserID();
 
-            title = "Edit Noticeboard";
+            title = "Edit ToDo";
             completionStateLabel.setVisible(false);
             completeRadioButton.setVisible(false);
             notCompleteRadioButton.setVisible(false);

@@ -1,6 +1,8 @@
 # Application Setup
 In order to set up the application perform the following steps:
-1) Run the contents of *../setup/setupDump.sql* in your PostgreSQL DBMS
+1) Run the contents of *../setup/setupDump.sql* in your PostgreSQL DBMS to set up the database schema. 
+   - To delete the schema run the contents of *../setup/deleteDump.sql* in your PostgreSQL DBMS to delete the database schema and data. 
+   - To load a data sample for the application run *../setup/insertDump.sql* in your PostgreSQL DBMS.
 2) Change the credentials in *../src/main/java/database/DatabaseConnection.java*
 3) Build the application with IntelliJ IDEA.
 4) Run the application with the **GUIMain** configuration in IntelliJ IDEA.

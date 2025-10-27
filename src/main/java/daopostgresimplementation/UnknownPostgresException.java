@@ -3,7 +3,7 @@ package daopostgresimplementation;
 import java.sql.SQLException;
 
 /**
- * Used to signal that an unexpected SQLError exception arised from an invoked method.
+ * <p>Used to signal that an unexpected SQLError exception arised from an invoked method.</p>
  */
 class UnknownPostgresException extends RuntimeException {
     /**

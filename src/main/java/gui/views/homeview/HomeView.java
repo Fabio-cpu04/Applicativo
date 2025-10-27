@@ -11,11 +11,11 @@ import java.text.ParseException;
 import java.util.regex.Pattern;
 
 //App imports
-import controller.Controller;
-
 import gui.GUI;
 import gui.views.GUIView;
 import gui.views.boardview.BoardView;
+
+import controller.*;
 
 /**
  * <p>The HomeView, displays a form where a User can sign up or log in.</p>
@@ -116,12 +116,12 @@ public class HomeView implements GUIView {
         try {
             return Controller.getInstance().registerUser(user, pass);
         }
-        catch (IllegalArgumentException _){
+        catch (InvalidModelAttributeException _){
             JOptionPane.showMessageDialog(homeFrame, "The username is not valid, usernames can only contain numbers, letters and the following symbols:'.','-','_'.' up to a maximum of 128 characters.", "Error - Invalid username", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        catch (IllegalStateException _) {
-            JOptionPane.showMessageDialog(homeFrame, "The user " + user +" already exists in the system.", "Error - User already exists.", JOptionPane.WARNING_MESSAGE);
+        catch (InvalidControllerOperationException _) {
+            JOptionPane.showMessageDialog(homeFrame, "The user \"" + user +"\" already exists in the system.", "Error - User already exists.", JOptionPane.WARNING_MESSAGE);
             return false;
         }
     }
@@ -148,7 +148,7 @@ public class HomeView implements GUIView {
             else if (res == -2)
                 JOptionPane.showMessageDialog(homeFrame, "This username is not currently registered.", "Error - User not registered", JOptionPane.INFORMATION_MESSAGE);
         }
-        catch (IllegalArgumentException _){
+        catch (InvalidModelAttributeException _){
             JOptionPane.showMessageDialog(homeFrame, "The username is not valid, usernames can only contain numbers, letters and the following symbols:'.','-','_'.' up to a maximum of 128 characters.", "Error - Invalid username", JOptionPane.ERROR_MESSAGE);
             return false;
         }

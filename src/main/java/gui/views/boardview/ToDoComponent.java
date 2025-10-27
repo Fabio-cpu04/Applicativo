@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.function.ToDoubleFunction;
 
 import java.net.URI;
@@ -25,6 +24,8 @@ import java.net.URI;
 //App imports
 import controller.Controller;
 
+import controller.InexistentModelEntityException;
+import controller.InvalidControllerOperationException;
 import dto.*;
 
 import gui.components.ListComponent;
@@ -92,8 +93,8 @@ class ToDoComponent {
         Color backgroundColor = Color.decode(todo.getBackgroundColor());
         Color textColor = (calculateContrast(Color.WHITE, backgroundColor) > calculateContrast(Color.BLACK, backgroundColor)) ? Color.WHITE : Color.BLACK;
 
-        GridBagConstraints c = new GridBagConstraints(0, 0, 1, 1, 0.5, 0.5,
-                GridBagConstraints.LINE_START, GridBagConstraints.NONE, new Insets(0,0,0,0), 0, 0);
+        GridBagConstraints attributeGridBadConstraints = new GridBagConstraints(0, 0, 1, 1, 0.5, 0.5,
+                GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0,0,0,0), 0, 0);
 
         //Setting up ToDoState (necessary)
         String state = todo.isCompleted() ? "[Completed] " : "[Not Completed]";
@@ -103,36 +104,19 @@ class ToDoComponent {
         else
             s.setForeground(textColor);
 
-        mainPanel.add(s, c);
+        mainPanel.add(s, attributeGridBadConstraints);
 
         //Setting up ToDo title (necessary) and ToDo description (optional)
-        this.drawTitleAndDescription(textColor, backgroundColor, boardSize, c);
+        this.drawTitleAndDescription(textColor, backgroundColor, boardSize, attributeGridBadConstraints);
 
         //Setting up ToDo image (optional)
-        this.drawImage(textColor, backgroundColor, boardSize, c);
+        this.drawImage(textColor, backgroundColor, boardSize, attributeGridBadConstraints);
 
         //Setting up ToDo activityURL (optional)
-        this.drawActivityURL(backgroundColor, c);
+        this.drawActivityURL(backgroundColor, attributeGridBadConstraints);
 
         //Setting up ToDo expiry date (optional)
-        LocalDateTime expiryDate = todo.getExpiryDate();
-        if(todo.getExpiryDate() != null && todo.getExpiryDate() != LocalDateTime.MAX) {
-            c.gridy += 1;
-            JTextPane p = styleText(expiryDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")), false, true, textColor, false, false);
-            p.setBackground(backgroundColor);
-
-            if (todo.isExpired()) { //If expired, add "(expired)" at end of date.
-                Document doc = p.getStyledDocument();
-                Style style = p.getStyle("customStyle");
-                StyleConstants.setBold(style, true);
-                try {
-                    doc.insertString(doc.getLength(), " (expired)", style);
-                } catch (Exception e) {
-                    e.printStackTrace(); //This is not really supposed to be reachable
-                }
-            }
-            mainPanel.add(p, c);
-        }
+        this.drawExpiryDate(textColor, backgroundColor, attributeGridBadConstraints);
 
         //Set up ToDo background color and border
         mainPanel.setBackground(backgroundColor);
@@ -264,6 +248,37 @@ class ToDoComponent {
         }
     }
 
+    private void drawExpiryDate(Color textColor, Color backgroundColor, GridBagConstraints constraints) {
+        LocalDateTime expiryDate = todo.getExpiryDate();
+        if(todo.getExpiryDate() != null && todo.getExpiryDate() != LocalDateTime.MAX) {
+            constraints.gridy += 1;
+            JTextPane p = styleText(expiryDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")), false, true, textColor, false, false);
+            p.setBackground(backgroundColor);
+
+            if (todo.isExpired()) { //If expired, add "(expired)" at end of date.
+                Document doc = p.getStyledDocument();
+                Style style = p.getStyle("customStyle");
+
+                StyleConstants.setBold(style, true); //Set bold
+
+                //If expired and not completed set color red
+                if(!todo.isCompleted()) {
+                    if (calculateContrast(Color.RED.brighter(), backgroundColor) > calculateContrast(Color.RED.darker(), backgroundColor))
+                        StyleConstants.setForeground(style, Color.RED.brighter());
+                    else
+                        StyleConstants.setForeground(style, Color.RED.darker());
+                }
+
+                try { //Add '(expired)' to the date
+                    doc.insertString(doc.getLength(), " (expired)", style);
+                } catch (Exception e) {
+                    e.printStackTrace(); //This is not really supposed to be reachable
+                }
+            }
+            mainPanel.add(p, constraints);
+        }
+    }
+
     /**
      * <p>Initializes a customized popup menu for {@link ToDoComponent}.</p>
      * @return the generated {@link JPopupMenu}
@@ -378,7 +393,7 @@ class ToDoComponent {
 
     //Menu helpers
     private void completeAction() {
-        String message = "Are you really sure you want to set the todo as";
+        String message = "Are you really sure you want to set the todo as ";
         message += todo.isCompleted() ? "not complete?" : "complete?";
 
         if(JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(mainPanel, message, "", JOptionPane.YES_NO_OPTION)) {
@@ -401,10 +416,11 @@ class ToDoComponent {
         int todoID = todo.getToDoID();
 
         //If necessary replace title
-        if (!newToDo.getTitle().equals(todo.getTitle())) {
+        if (!newToDo.getTitle().equals(todo.getTitle())) { //If newtitle != oldtitle
             try {
                 Controller.getInstance().updateToDoTitle(boardID, todoID, newToDo.getTitle());
-            } catch (IllegalStateException _) {
+            }
+            catch (InvalidControllerOperationException _) {
                 JOptionPane.showMessageDialog(mainPanel, "A ToDo with the same title already exists in the board", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -413,13 +429,9 @@ class ToDoComponent {
         if(!newToDo.getDescription().equals(todo.getDescription()))
             Controller.getInstance().updateToDoDescription(boardID, todoID, newToDo.getDescription());
 
-        //If necessary replace expiry date
-        if(newToDo.getExpiryDate() == null) {
-            if (todo.getExpiryDate() != null)
+        //If necessary (null case is to avoid dealing with NullPointerException) replace expiry date
+        if((newToDo.getExpiryDate() == null && todo.getExpiryDate() != null) || !newToDo.getExpiryDate().equals(todo.getExpiryDate()))
                 Controller.getInstance().updateToDoExpiryDate(boardID, todoID, newToDo.getExpiryDate());
-        }
-        else if (!newToDo.getExpiryDate().equals(todo.getExpiryDate()))
-            Controller.getInstance().updateToDoExpiryDate(boardID, todoID, newToDo.getExpiryDate());
 
         //If necessary replace activity url
         if(!newToDo.getActivityURL().equals(todo.getActivityURL()))
@@ -445,14 +457,18 @@ class ToDoComponent {
             try {
                 Controller.getInstance().addSharedUser(boardID, todoID, username);
             }
-            catch (IllegalStateException _) {
-                JOptionPane.showMessageDialog(mainPanel, "ToDo is already shared with user \"" + username + "\".", "Error", JOptionPane.ERROR_MESSAGE);
+            catch (InvalidControllerOperationException invalidop) {
+                if(invalidop.getErrorType() == InvalidControllerOperationException.InvalidOperationType.TODO_IS_ALREADY_SHARED)
+                    JOptionPane.showMessageDialog(mainPanel, "ToDo is already shared with user \"" + username + "\".", "Error", JOptionPane.ERROR_MESSAGE);
+
+                if(invalidop.getErrorType() == InvalidControllerOperationException.InvalidOperationType.CANNOT_SHARE_TODO_WITH_YOURSELF)
+                    JOptionPane.showMessageDialog(mainPanel, "You cannot share a ToDo with yourself.", "Error", JOptionPane.ERROR_MESSAGE);
             }
-            catch (IllegalArgumentException _) {
-                JOptionPane.showMessageDialog(mainPanel, "User \"" + username + "\" cannot share a ToDo with itself.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-            catch (NoSuchElementException _) {
-                JOptionPane.showMessageDialog(mainPanel, "User not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            catch (InexistentModelEntityException inexistententity) {
+                if(inexistententity.getEntityType() == InexistentModelEntityException.EntityType.INEXISTENT_USER)
+                    JOptionPane.showMessageDialog(mainPanel, "User not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                else
+                    throw inexistententity;
             }
         }
 
@@ -467,10 +483,15 @@ class ToDoComponent {
 
             try {
                 Controller.getInstance().removeSharedUser(boardID, todoID, username);
-            } catch (IllegalStateException _) {
+            }
+            catch (InvalidControllerOperationException _) {
                 JOptionPane.showMessageDialog(mainPanel, "ToDo is not shared with user \"" + username + "\".", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (NoSuchElementException _) {
-                JOptionPane.showMessageDialog(mainPanel, "User not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            catch (InexistentModelEntityException entityexc) {
+                if(entityexc.getEntityType() == InexistentModelEntityException.EntityType.INEXISTENT_USER)
+                    JOptionPane.showMessageDialog(mainPanel, "User not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                else
+                    throw entityexc;
             }
         }
 
@@ -482,7 +503,7 @@ class ToDoComponent {
         NoticeboardDTO board = parentBoardComponent.getBoard();
         List<ToDoDTO> todos = board.getToDos();
         List<String> items = todos.stream().map(ToDoDTO::getTitle).toList();
-        ListComponent list = new ListComponent(items);
+        ListComponent list = new ListComponent(items, "Move ToDo");
 
         String todoTitle = todo.getTitle();
         list.getModel().removeElement(todoTitle);
@@ -494,7 +515,7 @@ class ToDoComponent {
 
         list.getPanel().add(button, new GridBagConstraints(0, 1, 1, 1, 0.5, 0.5, GridBagConstraints.PAGE_END, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         button.setVisible(true);
-        list.reloadGUIComponent();
+        list.reloadListComponent();
 
         //Add list and button listeners
         list.getList().addListSelectionListener(e -> {
@@ -513,6 +534,7 @@ class ToDoComponent {
                 //Sync App change
                 String selectedToDoTitle = list.getList().getSelectedValue();
                 int predecessorIndex = (selectedToDoTitle == null) ? 0 : todos.indexOf(board.getToDo(selectedToDoTitle)) + 1;
+
                 Controller.getInstance().moveToDoToIndex(board.getBoardID(), todo.getToDoID(), predecessorIndex);
 
                 //Sync GUI state
@@ -528,7 +550,7 @@ class ToDoComponent {
         List<NoticeboardDTO> ownedBoards = Controller.getInstance().getNoticeboards().stream().filter(board -> board.getUserID() == userID).toList();
         List<String> items = ownedBoards.stream().map(NoticeboardDTO::getTitle).toList();
 
-        ListComponent list = new ListComponent(items);
+        ListComponent list = new ListComponent(items, "Move ToDo to a new board");
         list.getModel().removeElement(parentBoardComponent.getBoard().getTitle()); //Remove the original board from the list
 
         //Create "Move" button and init its settings
@@ -536,7 +558,7 @@ class ToDoComponent {
         button.setEnabled(false);
         list.getPanel().add(button, new GridBagConstraints(0, 1, 1, 1, 0.5, 0.5, GridBagConstraints.PAGE_END, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         button.setVisible(true);
-        list.reloadGUIComponent();
+        list.reloadListComponent();
 
         //Add list and button listeners
         list.getList().addListSelectionListener(e -> button.setEnabled(true));
@@ -564,8 +586,11 @@ class ToDoComponent {
                         list.dispose();
                         parentBoardComponent.getParentViewer().refreshBoardComponents();
                     }
-                    catch (IllegalStateException _){
-                        JOptionPane.showMessageDialog(mainPanel, "The destination Noticeboard already owns a ToDo titled \"" + todo.getTitle() + "\".", "Error", JOptionPane.ERROR_MESSAGE);
+                    catch (InvalidControllerOperationException exc){
+                        if(exc.getErrorType() == InvalidControllerOperationException.InvalidOperationType.TODO_TITLE_ALREADY_EXISTS)
+                            JOptionPane.showMessageDialog(mainPanel, "The destination Noticeboard already owns a ToDo titled \"" + todo.getTitle() + "\".", "Error", JOptionPane.ERROR_MESSAGE);
+                        else
+                            throw exc;
                     }
                 }
             }

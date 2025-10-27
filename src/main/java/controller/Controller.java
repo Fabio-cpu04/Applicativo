@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 //App imports
+import controller.InvalidModelAttributeException.InvalidAttributeType;
+import controller.InexistentModelEntityException.EntityType;
+import controller.InvalidControllerOperationException.InvalidOperationType;
+
 import database.DatabaseConnection;
 
 import dao.*;
@@ -102,13 +106,13 @@ public class Controller {
      * @param username the user's username
      * @return if found returns the User's userID, otherwise returns {@code -1}
      *
-     * @throws IllegalArgumentException if the username is not valid or too long
+     * @throws InvalidModelAttributeException if the username is not valid or too long
      */
     public int userExists(String username) {
         if(username.length() > 128)
-            throw new IllegalArgumentException("The username cannot be longer than 128 characters.");
+            throw new InvalidModelAttributeException("The username cannot be longer than 128 characters.", InvalidAttributeType.INVALID_USER_USERNAME);
         if(!username.matches(VALID_USERNAME_REGEX))
-            throw new IllegalArgumentException("The username is not valid.");
+            throw new InvalidModelAttributeException("The username is not valid.", InvalidAttributeType.INVALID_USER_USERNAME);
 
         UserDAO userDAO = new PostgresUserDAO(DatabaseConnection.getInstance().getConnection());
         return userDAO.userExists(username);
@@ -120,7 +124,8 @@ public class Controller {
      * @param password the user's password
      * @return {@code true } if successful, {@code false} if the user already exists in the system.
      *
-     * @throws IllegalArgumentException if the username is not valid or either the username or password are too long
+     * @throws InvalidModelAttributeException if the username is not valid or either the username or password are too long
+     * @throws InvalidControllerOperationException if a User with the same username exists already
      */
     public boolean registerUser(String username, String password){
         //Validate credentials
@@ -130,11 +135,16 @@ public class Controller {
         Connection con = DatabaseConnection.getInstance().getConnection();
         UserDAO userDAO = new PostgresUserDAO(con);
 
-        int authResult = userDAO.registerUser(username, password);
-        if(authResult == -1)
-            return false;
-        else
-            this.initUserSession(authResult, userDAO);
+        try {
+            int authResult = userDAO.registerUser(username, password);
+            if (authResult == -1)
+                return false;
+            else
+                this.initUserSession(authResult, userDAO);
+        }
+        catch (IllegalStateException _) {
+            throw new InvalidControllerOperationException("A User with the same username exists already", InvalidOperationType.USER_ALREADY_EXISTS);
+        }
 
         return true;
     }
@@ -145,7 +155,7 @@ public class Controller {
      * @param password the user's password
      * @return {@code 0} if successful, {@code -1} if the password is incorrect and {@code -2} if the user is not registered in the system.
      *
-     * @throws IllegalArgumentException if the username is not valid or either the username or password are too long
+     * @throws InvalidModelAttributeException if the username is not valid or either the username or password are too long
      */
     public int authenticateUser(String username, String password) {
         //Validate credentials
@@ -178,13 +188,8 @@ public class Controller {
 
     /**
      * <p>Invalidates the current User's cached data </p>
-     *
-     * @throws IllegalStateException if no user is currently logged in the system.
      */
     public void reloadUserData(){
-        if(!isUserLogged())
-            throw new IllegalStateException("The user is not logged.");
-
         //Invalidate cached data and reload
         this.loadUserNoticeboards(this.loggedUser.getUserID(), this.loggedUser.getNoticeboards());
     }
@@ -212,16 +217,28 @@ public class Controller {
      * <p>Adds a Noticeboard to the logged User</p>
      * @param noticeboard the noticeboard
      *
-     * @throws IllegalArgumentException if {@code noticeboard} is {@code null}, or if the title is not valid, or the title or description are too long
-     * @throws IllegalStateException if a noticeboard with the same title exists already for the user
+     * @throws InvalidModelAttributeException if the title is not valid, or the title or description are too long
+     * @throws IllegalArgumentException if {@code noticeboard} is {@code null}
+     * @throws InvalidControllerOperationException if a noticeboard with the same title exists already for the user
      */
     public void addNoticeboard(NoticeboardDTO noticeboard) {
+        if(noticeboard == null)
+            throw new IllegalArgumentException("NoticeboardDTO is null");
+
         //Validity check on Noticeboard metadata
-        validateNoticeboardMetadata(noticeboard);
+        this.validateNoticeboardMetadata(noticeboard);
+
 
         //Sync DB state
         NoticeboardDAO boardDAO = new PostgresNoticeboardDAO(DatabaseConnection.getInstance().getConnection());
-        int boardID = boardDAO.addNoticeboard(noticeboard.getTitle(), noticeboard.getDescription(), loggedUser.getUserID());
+
+        int boardID;
+        try {
+            boardID = boardDAO.addNoticeboard(noticeboard.getTitle(), noticeboard.getDescription(), loggedUser.getUserID());
+        }
+        catch (IllegalStateException _) {
+            throw new InvalidControllerOperationException("A noticeboard with the same title exists already", InvalidOperationType.NOTICEBOARD_TITLE_ALREADY_EXISTS);
+        }
 
         //Sync App state
         if (boardID != -1) {
@@ -234,12 +251,17 @@ public class Controller {
      * <p>Deletes the logged User's Noticeboard</p>
      * @param boardID the target Noticeboard's ID
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the noticeboard does not exist
      */
     public void deleteNoticeboardByID(int boardID) {
         //Sync DB state
         NoticeboardDAO boardDAO = new PostgresNoticeboardDAO(DatabaseConnection.getInstance().getConnection());
-        boardDAO.removeNoticeboard(boardID);
+        try {
+            boardDAO.removeNoticeboard(boardID);
+        }
+        catch(NoSuchElementException _) {
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + boardID + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
+        }
 
         //Sync App state
         loggedUser.deleteNoticeboard(boardID);
@@ -250,18 +272,23 @@ public class Controller {
      * @param noticeboard the new Noticeboard's data
      *
      * @throws IllegalArgumentException if {@code noticeboard} is {@code null}
-     * @throws NoSuchElementException if the target noticeboard does not exist
-     * @throws IllegalArgumentException if the board's ID is negative, if the title is not valid or if either the title or description are too long
+     * @throws InvalidModelAttributeException if the board's ID is negative, if the title is not valid or if either the title or description are too long
+     * @throws InexistentModelEntityException if the target noticeboard does not exist
      */
     public void updateNoticeboard(NoticeboardDTO noticeboard) {
+        if(noticeboard == null)
+            throw new IllegalArgumentException("NoticeboardDTO is null");
+
         //Validity check on Noticeboard metadata and boardID
         this.validateNoticeboardMetadata(noticeboard);
+
+        //Validity check on boardID
         if(noticeboard.getBoardID() < 0)
-            throw new IllegalArgumentException("The board ID cannot be negative");
+            throw new InvalidModelAttributeException("The board ID cannot be negative", InvalidAttributeType.INVALID_NOTICEBOARD_ID);
 
         Noticeboard target = loggedUser.getNoticeboard(noticeboard.getBoardID());
         if(target == null)
-            throw new NoSuchElementException("The target noticeboard (ID: " + noticeboard.getUserID() + ") does not exist");
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + noticeboard.getUserID() + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
 
         //Sync DB state
         NoticeboardDAO boardDAO = new PostgresNoticeboardDAO(DatabaseConnection.getInstance().getConnection());
@@ -280,12 +307,12 @@ public class Controller {
      * @param todoID the ToDo's ID
      * @return the ToDo if the noticeboard contains it, {@code null} otherwise
      *
-     * @throws NoSuchElementException if the target noticeboard does not exist
+     * @throws InexistentModelEntityException if the target noticeboard does not exist
      */
     public ToDo getToDo(int boardID, int todoID){
         Noticeboard board = loggedUser.getNoticeboard(boardID);
         if(board == null)
-            throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + boardID + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
 
         return board.getToDo(todoID);
     }
@@ -296,9 +323,9 @@ public class Controller {
      * @param todo the todo
      *
      * @throws IllegalArgumentException if {@code todo} is {@code null}
-     * @throws IllegalArgumentException if the title is invalid or too long, or if the background color's format is not valid
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws IllegalStateException if a todo with the same title already exists in the board
+     * @throws InvalidModelAttributeException if the title is invalid or too long, or if the background color's format is not valid
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InvalidControllerOperationException if a todo with the same title already exists in the board
      */
     public void addToDo(int boardID, ToDoDTO todo){
         if(todo == null)
@@ -306,18 +333,18 @@ public class Controller {
 
         //Validity check on ToDo metadata
         if(todo.getTitle().length() > 128)
-            throw new IllegalArgumentException("The title cannot be longer than 128 characters.");
+            throw new InvalidModelAttributeException("The title cannot be longer than 128 characters.", InvalidAttributeType.INVALID_TODO_TITLE);
         if(!todo.getTitle().matches("^[A-Za-z0-9@#&_.\\- ]+$"))
-            throw new IllegalArgumentException("The title is not valid.");
+            throw new InvalidModelAttributeException("The title is not valid.", InvalidAttributeType.INVALID_TODO_TITLE);
         if(!todo.getBackgroundColor().matches("^#[0-9A-Fa-f]{6}$"))
-            throw new IllegalArgumentException("ToDo background color is not valid, must be in the following format \"#RRGGBB\"");
+            throw new InvalidModelAttributeException("ToDo background color is not valid, must be in the following format \"#RRGGBB\"", InvalidAttributeType.INVALID_TODO_COLOR);
 
         Noticeboard board = loggedUser.getNoticeboard(boardID);
         if(board == null)
-            throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + boardID + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
 
         if(board.getToDo(todo.getToDoID()) != null) //ToDo exists already
-            throw new IllegalStateException("A ToDo with the same title exists already, duplicate titles are not allowed");
+            throw new InvalidControllerOperationException("A ToDo with the same title exists already, duplicate titles are not allowed", InvalidOperationType.TODO_TITLE_ALREADY_EXISTS);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -336,18 +363,18 @@ public class Controller {
      * @param todoID the ToDo's ID
      * @param boardID the Noticeboard's ID
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
      *
      */
     public void deleteToDo(int boardID, int todoID){
         Noticeboard board = loggedUser.getNoticeboard(boardID);
         if(board == null)
-            throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + boardID + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
 
         ToDo todo = board.getToDo(todoID);
         if(todo == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -362,13 +389,13 @@ public class Controller {
      * @param boardID the target Noticeboard's ID
      * @param todoID the target ToDo's ID
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
      */
     public void updateCompletionState(int boardID, int todoID){
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -384,31 +411,31 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param newTitle the new title
      *
-     * @throws IllegalArgumentException if the new title is null or blank
-     * @throws IllegalStateException if a todo with the same title already exists
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
+     * @throws InvalidModelAttributeException if the new title is null, blank or invalid
+     * @throws InvalidControllerOperationException if a todo with the same title already exists
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
      */
     public void updateToDoTitle(int boardID, int todoID, String newTitle){
         //Validity check on ToDo metadata
         if(newTitle == null || newTitle.isBlank())
-            throw new IllegalArgumentException("The new title cannot be null or empty");
+            throw new InvalidModelAttributeException("The new title cannot be null or empty", InvalidAttributeType.INVALID_TODO_TITLE);
         if(newTitle.length() > 128)
-            throw new IllegalArgumentException("The title cannot be longer than 128 characters.");
+            throw new InvalidModelAttributeException("The title cannot be longer than 128 characters.", InvalidAttributeType.INVALID_TODO_TITLE);
         if(!newTitle.matches("^[A-Za-z0-9@#&_.\\- ]+$"))
-            throw new IllegalArgumentException("The title is not valid.");
+            throw new InvalidModelAttributeException("The title is not valid.", InvalidAttributeType.INVALID_TODO_TITLE);
 
         Noticeboard board = loggedUser.getNoticeboard(boardID);
         if(board == null)
-            throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + boardID + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
 
         //Check if title is already used
         if(board.getToDo(newTitle) != null)
-            throw new IllegalStateException("A todo with the title \"" + newTitle + "\" already exists");
+            throw new InvalidControllerOperationException("A todo with the title \"" + newTitle + "\" already exists", InvalidOperationType.TODO_TITLE_ALREADY_EXISTS);
 
         ToDo target = board.getToDo(todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -424,17 +451,17 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param newDescription the new description
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
-     * @throws IllegalArgumentException if the new description is too long
+     * @throws InvalidModelAttributeException if the new description is too long
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
      */
     public void updateToDoDescription(int boardID, int todoID, String newDescription){
         if(newDescription.length() > 256)
-            throw new IllegalArgumentException("The new description cannot be longer than 256 characters.");
+            throw new InvalidModelAttributeException("The new description cannot be longer than 256 characters.", InvalidAttributeType.INVALID_NOTICEBOARD_DESCRIPTION);
 
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -450,13 +477,13 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param newExpiryDate the new expiry date
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
      */
     public void updateToDoExpiryDate(int boardID, int todoID, LocalDateTime newExpiryDate){
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -472,17 +499,17 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param newActivityURL the new activity url
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
-     * @throws IllegalArgumentException if the new activity URL is too long
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
+     * @throws InvalidModelAttributeException if the new activity URL is too long
      */
     public void updateToDoActivityURL(int boardID, int todoID, String newActivityURL){
-        if(newActivityURL.length() > 256)
-            throw new IllegalArgumentException("The new activity URL cannot be longer than 256 characters.");
+        if(newActivityURL.length() > 2048)
+            throw new InvalidModelAttributeException("The new activity URL cannot be longer than 256 characters.", InvalidAttributeType.INVALID_TODO_ACTIVITY_URL);
 
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -498,17 +525,17 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param newImageURL the new image url
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
-     * @throws IllegalArgumentException if the new image URL is too long
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
+     * @throws InvalidModelAttributeException if the new image URL is too long
      */
     public void updateToDoImageURL(int boardID, int todoID, String newImageURL){
-        if(newImageURL.length() > 256)
-            throw new IllegalArgumentException("The new image URL cannot be longer than 256 characters.");
+        if(newImageURL.length() > 2048)
+            throw new InvalidModelAttributeException("The new image URL cannot be longer than 256 characters.", InvalidAttributeType.INVALID_TODO_IMAGE_URL);
 
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -524,19 +551,17 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param newBackgroundColor the new background color
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
-     * @throws IllegalArgumentException if the new background color is not valid or too long
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
+     * @throws InvalidModelAttributeException if the new background color is not valid or too long
      */
     public void updateToDoBackgroundColor(int boardID, int todoID, String newBackgroundColor){
         if(!newBackgroundColor.matches("^#[0-9A-Fa-f]{6}$"))
-            throw new IllegalArgumentException("ToDo background color is not valid, must be in the following format \"#RRGGBB\"");
-        if(newBackgroundColor.length() > 7)
-            throw new IllegalArgumentException("The new background color cannot be longer than 7 characters.");
+            throw new InvalidModelAttributeException("ToDo background color is not valid, must be in the following format \"#RRGGBB\"", InvalidAttributeType.INVALID_TODO_COLOR);
 
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
@@ -547,33 +572,41 @@ public class Controller {
     }
 
     /**
-     * <p>Shares a ToDo from a Noticeboard of a User.</p>
+     * <p>Shares a ToDo with a User.</p>
      * @param boardID the target Noticeboard's ID
      * @param todoID the target ToDo's ID
      * @param username the User's username
      *
-     * @throws NoSuchElementException if the Noticeboard does not exist
-     * @throws NoSuchElementException if the ToDo does not exist
-     * @throws NoSuchElementException if the User does not exist
-     * @throws IllegalStateException if the ToDo is already shared with the User
-     * @throws IllegalArgumentException if the User is trying to share a ToDo with itself
+     * @throws InexistentModelEntityException if the Noticeboard does not exist
+     * @throws InexistentModelEntityException if the ToDo does not exist
+     * @throws InexistentModelEntityException if the User does not exist
+     * @throws InvalidControllerOperationException if the ToDo is already shared with the User
+     * @throws InvalidControllerOperationException if the User is trying to share a ToDo with itself
      */
     public void addSharedUser(int boardID, int todoID, String username){
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Assert that user exists & get its ID
         int userID = this.userExists(username);
+        if(userID == -1)
+            throw new InexistentModelEntityException("The target user (\"" + username + "\") does not exist", EntityType.INEXISTENT_USER);
 
-        if(userID == -1) {
-            //Sync DB state
-            SharingDAO shareDAO = new PostgresSharingDAO(DatabaseConnection.getInstance().getConnection());
+        //Sync DB state
+        SharingDAO shareDAO = new PostgresSharingDAO(DatabaseConnection.getInstance().getConnection());
+        try {
             shareDAO.shareToDo(userID, todoID);
-
-            //Sync App state
-            target.addSharedUser(username);
         }
+        catch (IllegalStateException _){
+            throw new InvalidControllerOperationException("The ToDo is already shared with the User", InvalidOperationType.TODO_IS_ALREADY_SHARED);
+        }
+        catch (IllegalArgumentException _){
+            throw new InvalidControllerOperationException("The User is trying to share a ToDo with itself", InvalidOperationType.CANNOT_SHARE_TODO_WITH_YOURSELF);
+        }
+
+        //Sync App state
+        target.addSharedUser(username);
     }
 
     /**
@@ -582,28 +615,33 @@ public class Controller {
      * @param todoID the target ToDo's ID
      * @param username the user's username
      *
-     * @throws NoSuchElementException if the Noticeboard does not exist
-     * @throws NoSuchElementException if the ToDo does not exist
-     * @throws NoSuchElementException if the User does not exist
-     * @throws IllegalStateException if the ToDo is not shared with the User
+     * @throws InexistentModelEntityException if the Noticeboard does not exist
+     * @throws InexistentModelEntityException if the ToDo does not exist
+     * @throws InexistentModelEntityException if the User does not exist
+     * @throws InvalidControllerOperationException if the ToDo is not shared with the User
      */
     public void removeSharedUser(int boardID, int todoID, String username){
         //Check for local Noticeboard & ToDo existence
         ToDo target = this.getToDo(boardID, todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist", EntityType.INEXISTENT_TODO);
 
         //Assert that user exists & get its ID
         int userID = this.userExists(username);
+        if(userID == -1)
+            throw new InexistentModelEntityException("The target user (\"" + username + "\") does not exist", EntityType.INEXISTENT_USER);
 
-        if(userID != -1) {
-            //Sync DB state
-            SharingDAO shareDAO = new PostgresSharingDAO(DatabaseConnection.getInstance().getConnection());
+        //Sync DB state
+        SharingDAO shareDAO = new PostgresSharingDAO(DatabaseConnection.getInstance().getConnection());
+        try {
             shareDAO.unshareToDo(userID, todoID);
-
-            //Sync App state
-            target.removeSharedUser(username);
         }
+        catch (IllegalStateException _){
+            throw new InvalidControllerOperationException("The ToDo is not shared with the User", InvalidOperationType.TODO_IS_NOT_ALREADY_SHARED);
+        }
+
+        //Sync App state
+        target.removeSharedUser(username);
     }
 
     /**
@@ -612,18 +650,18 @@ public class Controller {
      * @param todoID the ToDo's ID
      * @param newIndex the new position's index
      *
-     * @throws NoSuchElementException if the noticeboard does not exist
-     * @throws NoSuchElementException if the todo does not exist
+     * @throws InexistentModelEntityException if the noticeboard does not exist
+     * @throws InexistentModelEntityException if the todo does not exist
      * @throws IndexOutOfBoundsException if {@code newIndex < 0} or {@code newIndex} is bigger or equal to the Noticeboard's size
      */
     public void moveToDoToIndex(int boardID, int todoID, int newIndex){
         Noticeboard board = loggedUser.getNoticeboard(boardID);
         if(board == null)
-            throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
+            throw new InexistentModelEntityException("The target noticeboard (ID: " + boardID + ") does not exist", EntityType.INEXISTENT_NOTICEBOARD);
 
         ToDo target = board.getToDo(todoID);
         if(target == null)
-            throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist in board (ID: " + boardID + ")");
+            throw new InexistentModelEntityException("The target todo (ID: " + todoID + ") does not exist in board (ID: " + boardID + ")", EntityType.INEXISTENT_TODO);
 
         if(newIndex < 0 || newIndex >= board.getToDoCount())
             throw new IndexOutOfBoundsException("Invalid index.\nCannot move todo to index " + newIndex);
@@ -648,32 +686,37 @@ public class Controller {
 
     /**
      * <p>Moves a ToDo from its original Noticeboard to another</p>
-     * @param boardID the Noticeboard's ID
+     * @param originBoardID the origin Noticeboard's ID
      * @param todoID the ToDo's ID
-     * @param newBoardID the new Noticeboard's ID
+     * @param targetBoardID the destination Noticeboard's ID
      *
-     * @throws NoSuchElementException if either the original or new Noticeboard do not exist, or if the todo does not exist
-     * @throws IllegalArgumentException if the new Noticeboard is not owned by the User
-     * @throws IllegalStateException if the new Noticeboard already owns a ToDo with the same name as the ToDo
+     * @throws InexistentModelEntityException if either the original or new Noticeboard do not exist, or if the todo does not exist
+     * @throws InvalidControllerOperationException if the new Noticeboard is not owned by the User
+     * @throws InvalidControllerOperationException if the destination Noticeboard already owns a ToDo with the same title
      */
-    public void moveToDoToBoard(int boardID, int todoID, int newBoardID){
-        Noticeboard oldBoard = loggedUser.getNoticeboard(boardID);
-        Noticeboard newBoard = loggedUser.getNoticeboard(newBoardID);
+    public void moveToDoToBoard(int originBoardID, int todoID, int targetBoardID){
+        Noticeboard oldBoard = loggedUser.getNoticeboard(originBoardID);
+        Noticeboard newBoard = loggedUser.getNoticeboard(targetBoardID);
         if(oldBoard == null)
-            throw new NoSuchElementException("The original noticeboard does not exist");
+            throw new InexistentModelEntityException("The origin noticeboard does not exist", EntityType.INEXISTENT_ORIGIN_NOTICEBOARD);
         if(newBoard == null)
-            throw new NoSuchElementException("The new noticeboard does not exist");
+            throw new InexistentModelEntityException("The target noticeboard does not exist", EntityType.INEXISTENT_TARGET_NOTICEBOARD);
 
         if(newBoard.getUserID() != this.getLoggedUser().getUserID())
-            throw new IllegalArgumentException("The new noticeboard is not owned by User \"" + this.getLoggedUser().getUsername() + "\"");
+            throw new InvalidControllerOperationException("The new noticeboard is not owned by User \"" + this.getLoggedUser().getUsername() + "\"", InvalidOperationType.USER_DOES_NOT_OWN_TARGET_NOTICEBOARD);
 
         ToDo todo = oldBoard.getToDo(todoID);
         if(todo == null)
-            throw new NoSuchElementException("The target todo does not exist");
+            throw new InexistentModelEntityException("The ToDo does not exist", EntityType.INEXISTENT_TODO);
 
         //Sync DB state
         ToDoDAO todoDAO = new PostgresToDoDAO(DatabaseConnection.getInstance().getConnection());
-        todoDAO.moveToDoToBoard(todoID, boardID, newBoardID);
+        try {
+            todoDAO.moveToDoToBoard(todoID, originBoardID, targetBoardID);
+        }
+        catch(IllegalStateException _){
+            throw new InvalidControllerOperationException("The destination Noticeboard already owns a ToDo with the same title", InvalidOperationType.TODO_TITLE_ALREADY_EXISTS);
+        }
 
         //Sync App state
         newBoard.addToDo(todo);
@@ -738,28 +781,29 @@ public class Controller {
      * @param username the User's username
      * @param password the User's password
      *
-     * @throws IllegalArgumentException if the username is not valid or either the username or password are too long
+     * @throws InvalidModelAttributeException if the username is not valid or either the username or password are too long
      */
     private void validateUserCredentials(String username, String password) {
         if(username.length() > 128)
-            throw new IllegalArgumentException("The username cannot be longer than 128 characters.");
+            throw new InvalidModelAttributeException("The username cannot be longer than 128 characters.", InvalidAttributeType.INVALID_USER_USERNAME);
         if(!username.matches(VALID_USERNAME_REGEX))
-            throw new IllegalArgumentException("The username is not valid.");
+            throw new InvalidModelAttributeException("The username is not valid.", InvalidAttributeType.INVALID_USER_USERNAME);
+
         if(password.length() > 128)
-            throw new IllegalArgumentException("The password cannot be longer than 128 characters.");
+            throw new InvalidModelAttributeException("The password cannot be longer than 128 characters.", InvalidAttributeType.INVALID_USER_PASSWORD);
     }
     /**
      * <p>Asserts that the metadata of a Noticeboard is valid.</p>
      * @param noticeboard the Noticeboard's DTO
      *
-     * @throws IllegalArgumentException if the title is not valid, or the title or description are too long
+     * @throws InvalidModelAttributeException if the title is not valid, or the title or description are too long
      */
     private void validateNoticeboardMetadata(NoticeboardDTO noticeboard) {
         if(noticeboard.getTitle().length() > 128)
-            throw new IllegalArgumentException("The title cannot be longer than 128 characters.");
+            throw new InvalidModelAttributeException("The title cannot be longer than 128 characters.", InvalidAttributeType.INVALID_NOTICEBOARD_TITLE);
         if(!noticeboard.getTitle().matches("[A-Za-z0-9@#&_.\\- ]+$"))
-            throw new IllegalArgumentException("The title is not valid.");
+            throw new InvalidModelAttributeException("The title is not valid.", InvalidAttributeType.INVALID_NOTICEBOARD_TITLE);
         if(noticeboard.getDescription().length() > 256)
-            throw new IllegalArgumentException("The description cannot be longer than 256 characters.");
+            throw new InvalidModelAttributeException("The description cannot be longer than 256 characters.", InvalidAttributeType.INVALID_NOTICEBOARD_DESCRIPTION);
     }
 }

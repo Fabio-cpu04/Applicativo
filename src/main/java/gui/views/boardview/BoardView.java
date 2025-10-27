@@ -16,9 +16,9 @@ import java.util.List;
 import gui.components.forms.NoticeboardForm;
 import gui.views.GUIView;
 
-import controller.Controller;
-
 import gui.components.ListComponent;
+
+import controller.*;
 
 import dto.NoticeboardDTO;
 import dto.ToDoDTO;
@@ -218,7 +218,7 @@ public class BoardView implements GUIView {
             Controller.getInstance().addNoticeboard(newBoard);
             reloadBoardComponents();
         }
-        catch(IllegalStateException _) {
+        catch(InvalidControllerOperationException _) {
             JOptionPane.showMessageDialog(mainPanel, "Couldn't add Noticeboard, a Noticeboard with the same title exists already.");
         }
     }
@@ -227,14 +227,14 @@ public class BoardView implements GUIView {
         //Create ListComponent object
         List<NoticeboardDTO> boards = getOwnedNoticeboards();
         List<String> items = boards.stream().map(NoticeboardDTO::getTitle).toList();
-        ListComponent list = new ListComponent(items);
+        ListComponent list = new ListComponent(items, "Modify a Noticeboard");
 
         //Create "Modify" button and init its settings
         JButton button = new JButton("Modify");
         button.setEnabled(false);
         list.getPanel().add(button, new GridBagConstraints(0, 1, 1, 1, 0.5, 0.5, GridBagConstraints.PAGE_END, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         button.setVisible(true);
-        list.reloadGUIComponent();
+        list.reloadListComponent();
 
         //Add list and button listeners
         list.getList().addListSelectionListener(_ -> button.setEnabled(true));
@@ -273,14 +273,14 @@ public class BoardView implements GUIView {
         //Create ListComponent object
         List<NoticeboardDTO> boards = new ArrayList<>(getOwnedNoticeboards());
         List<String> items = boards.stream().map(NoticeboardDTO::getTitle).toList();
-        ListComponent list = new ListComponent(items);
+        ListComponent list = new ListComponent(items, "Delete a Noticeboard");
 
         //Create "Delete" button and init its settings
         JButton button = new JButton("Delete");
         button.setEnabled(false);
         list.getPanel().add(button, new GridBagConstraints(0, 1, 1, 1, 0.5, 0.5, GridBagConstraints.PAGE_END, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
         button.setVisible(true);
-        list.reloadGUIComponent();
+        list.reloadListComponent();
 
         //Add list and button listeners
         list.getList().addListSelectionListener(_ -> button.setEnabled(true));
@@ -306,7 +306,7 @@ public class BoardView implements GUIView {
                         Controller.getInstance().deleteNoticeboardByID(board.getBoardID());
 
                         //Sync GUI change
-                        list.getModel().remove(index);
+                        list.dispose();
                         boards.remove(index);
                         reloadBoardComponents();
                     }
@@ -322,11 +322,16 @@ public class BoardView implements GUIView {
         ArrayList<String> expiringToday = new ArrayList<>();
         for (NoticeboardDTO board : getVisibleNoticeboards())
             for(ToDoDTO todo : board.getToDos())
-                if (todo.getExpiryDate() != null && todo.getExpiryDate().toLocalDate().isEqual(today) && !todo.isExpired())
-                    expiringToday.add(todo.getTitle() + " (from " + board.getTitle() + ")" +
-                            "   [Expires at " + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) +  "]");
+                if (todo.getExpiryDate() != null && todo.getExpiryDate().toLocalDate().isEqual(today) && !todo.isExpired()) {
+                    String matchDescription = todo.getTitle();
+                    matchDescription += (board.getUserID() == Controller.getInstance().getLoggedUser().getUserID()) ? " (from " : " (shared from ";
+                    matchDescription += board.getTitle() + ") " +
+                            "   [Expires at " + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) + "]";
 
-        new ListComponent(expiringToday.stream().toList()); //Spawn ListComponent
+                    expiringToday.add(matchDescription);
+                }
+
+        new ListComponent(expiringToday.stream().toList(), "ToDos expiring today"); //Spawn ListComponent
     }
 
     private void expiringBeforeAction() {
@@ -336,7 +341,7 @@ public class BoardView implements GUIView {
 
         boolean validInput = false;
         while(!validInput) {
-            dateString = JOptionPane.showInputDialog(mainPanel, "Insert a date (use the following format \"dd/mm/yyyy\", leave blank to see all unexpired ToDos)", "", JOptionPane.PLAIN_MESSAGE);
+            dateString = JOptionPane.showInputDialog(mainPanel, "Insert a date (use the following format \"dd/mm/yyyy\", leave blank to see all unexpired ToDos)", "Search ToDos by expiry date", JOptionPane.PLAIN_MESSAGE);
             if(dateString == null)
                 return;
 
@@ -362,14 +367,22 @@ public class BoardView implements GUIView {
             for (ToDoDTO todo : board.getToDos()){
                 if(todo.getExpiryDate() != null) {
                     boolean beforeDate = todo.getExpiryDate().toLocalDate().isBefore(date);
-                    if (beforeDate && !todo.isExpired())
-                        expiringAtDate.add(todo.getTitle() + " (from " + board.getTitle() + ")" +
-                                "   [Expires at " + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) + "]");
+                    if (beforeDate && !todo.isExpired()) {
+                        String matchDescription = todo.getTitle();
+                        matchDescription += (board.getUserID() == Controller.getInstance().getLoggedUser().getUserID()) ? " (from " : " (shared from ";
+                        matchDescription += board.getTitle() + ") " +
+                        "   [Expires at " + todo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")) + "]";
+
+                        expiringAtDate.add(matchDescription);
+                    }
                 }
             }
         }
 
-        new ListComponent(expiringAtDate.stream().toList()); //Spawn ListComponent
+        String listComponentTitle = (date.equals(LocalDate.MAX)) ? //A.k.a. user chose no date
+                  "Unexpired ToDos"
+                : "ToDos expiring before " + date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        new ListComponent(expiringAtDate.stream().toList(), listComponentTitle); //Spawn ListComponent
     }
 
     private void searchByTitleAction() {
@@ -377,7 +390,7 @@ public class BoardView implements GUIView {
         boolean validInput = false;
 
         while(!validInput) {
-            title = JOptionPane.showInputDialog(mainPanel, "Insert a title or part of it.", "", JOptionPane.PLAIN_MESSAGE);
+            title = JOptionPane.showInputDialog(mainPanel, "Insert a title or part of it.", "Search ToDos by title", JOptionPane.PLAIN_MESSAGE);
             if (title == null) {
                 return;
             }
@@ -388,12 +401,17 @@ public class BoardView implements GUIView {
         ArrayList<String> matches = new ArrayList<>();
         for (NoticeboardDTO board : getVisibleNoticeboards()) {
             for (ToDoDTO todo : board.getToDos()) {
-                if(todo.getTitle().toLowerCase().contains(title.toLowerCase()))
-                    matches.add(todo.getTitle() + " (from " + board.getTitle() + ")");
+                if(todo.getTitle().toLowerCase().contains(title.toLowerCase())) {
+                    String matchDescription = todo.getTitle();
+                    matchDescription += (board.getUserID() == Controller.getInstance().getLoggedUser().getUserID()) ? " (from " : " (shared from ";
+                    matchDescription += board.getTitle() + ") ";
+
+                    matches.add(matchDescription);
+                }
             }
         }
 
-        new ListComponent(matches.stream().toList()); //Spawn ListComponent
+        new ListComponent(matches.stream().toList(), "ToDos that contain \"" + title + "\" in their title"); //Spawn ListComponent
     }
 
     /**

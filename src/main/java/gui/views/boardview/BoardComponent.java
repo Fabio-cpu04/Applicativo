@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 //App imports
-import controller.Controller;
+import controller.*;
+
 import dto.NoticeboardDTO;
 import dto.ToDoDTO;
 import gui.components.forms.ToDoForm;
@@ -153,7 +154,7 @@ class BoardComponent {
                 //Sync GUI state
                 reloadToDoComponent();
             }
-        } catch (IllegalStateException _) {
+        } catch (InvalidControllerOperationException _) {
             JOptionPane.showMessageDialog(mainPanel, "Couldn't add ToDo, a ToDo with the same title exists already.");
         }
     }

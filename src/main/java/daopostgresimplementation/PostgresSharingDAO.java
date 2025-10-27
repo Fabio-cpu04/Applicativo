@@ -88,8 +88,7 @@ public class PostgresSharingDAO implements SharingDAO {
 
                 return 0;
             }
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return -1;
         }
     }
@@ -118,8 +117,7 @@ public class PostgresSharingDAO implements SharingDAO {
                 boards.add(new Noticeboard(res.getInt(1), res.getString(2), res.getString(3), res.getInt(4)));
 
             return 0;
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return -1;
         }
     }
@@ -134,7 +132,6 @@ public class PostgresSharingDAO implements SharingDAO {
 
             insertStatement.executeUpdate();
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code) {
                 case FOREIGN_KEY_VIOLATION_SQL_STATE -> throw new NoSuchElementException("No user with the ID " + userID + " or ToDo with the ID "+ todoID + " exists");
@@ -156,7 +153,7 @@ public class PostgresSharingDAO implements SharingDAO {
             if(res == 0)
                 throw new IllegalStateException("User (ID:" + userID + ") does not exist or ToDo (ID:" + todoID + ") is not shared with the User");
         } catch (SQLException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 }

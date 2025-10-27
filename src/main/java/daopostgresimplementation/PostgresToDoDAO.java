@@ -49,8 +49,7 @@ public class PostgresToDoDAO implements ToDoDAO {
                 list.add(Integer.valueOf(res.getString(1)));
 
             return list.stream().toList();
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return list.stream().toList();
         }
     }
@@ -71,8 +70,7 @@ public class PostgresToDoDAO implements ToDoDAO {
                         res.getString(6), Optional.ofNullable(res.getTimestamp(7)).map(Timestamp::toLocalDateTime).orElse(null), res.getInt(8), res.getString(9)));
 
             return 0;
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return -1;
         }
     }
@@ -88,8 +86,7 @@ public class PostgresToDoDAO implements ToDoDAO {
 
             return new ToDo(todoID, res.getBoolean(1), res.getString(2), res.getString(3), res.getString(4),
                     res.getString(5), res.getTimestamp(6).toLocalDateTime(), res.getInt(7), res.getString(8));
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return null;
         }
     }
@@ -126,7 +123,6 @@ public class PostgresToDoDAO implements ToDoDAO {
                 return resSet.getInt(1);
             }
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code) {
                 case VALUE_TOO_LONG_SQL_STATE -> throw new IllegalArgumentException("The title cannot be longer than 128 characters.");
@@ -159,7 +155,7 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -176,7 +172,6 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code) {
                 case VALUE_TOO_LONG_SQL_STATE -> throw new IllegalArgumentException("The title cannot be longer than 128 characters.");
@@ -205,7 +200,6 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             if(code.equals(VALUE_TOO_LONG_SQL_STATE))
                 throw new IllegalArgumentException("ToDo description cannot be longer than 256 characters.");
@@ -225,7 +219,6 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             if(code.equals(VALUE_TOO_LONG_SQL_STATE))
                 throw new IllegalArgumentException("ToDo activity URL cannot be longer than 256 characters.");
@@ -245,7 +238,6 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             if(code.equals(VALUE_TOO_LONG_SQL_STATE))
                 throw new IllegalArgumentException("ToDo image URL cannot be longer than 256 characters.");
@@ -269,7 +261,7 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -286,7 +278,6 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target todo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code){
                 case VALUE_TOO_LONG_SQL_STATE -> throw new IllegalArgumentException("ToDo background color cannot be longer than 7 characters.");
@@ -307,7 +298,7 @@ public class PostgresToDoDAO implements ToDoDAO {
 
             moveQuery.executeUpdate();
         } catch (SQLException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -346,7 +337,8 @@ public class PostgresToDoDAO implements ToDoDAO {
                 connection.commit();
                 }
             }
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             if(e.getSQLState().equals(DUPLICATE_KEY_VALUE_SQL_STATE))
                 throw new IllegalStateException("You can't move a ToDo to a Noticeboard where a ToDo with the same title exists.");
 
@@ -354,14 +346,15 @@ public class PostgresToDoDAO implements ToDoDAO {
                 connection.rollback();
             }
             catch (SQLException e1) {
-                //e1.printStackTrace();
+                e1.printStackTrace();
             }
-        } finally {
+        }
+        finally {
             try {
                 connection.setAutoCommit(true);
             }
             catch (SQLException e1) {
-                //e1.printStackTrace();
+                e1.printStackTrace();
             }
         }
     }
@@ -377,7 +370,7 @@ public class PostgresToDoDAO implements ToDoDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target ToDo (ID: " + todoID + ") does not exist");
         } catch (SQLException e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 }

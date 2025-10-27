@@ -43,10 +43,8 @@ public class PostgresUserDAO implements UserDAO {
             ResultSet resSet = userIDStatement.executeQuery();
             resSet.next();
 
-            int userID = resSet.getInt(1);
-            return userID;
+            return resSet.getInt(1); //Returns userID
         } catch (SQLException e) {
-            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code){
                 case "22001" -> { //username or password exceed 128 chars
@@ -77,8 +75,7 @@ public class PostgresUserDAO implements UserDAO {
                 return res.getInt(1); //Returns userID
             else
                 return -1;
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return -2;
         }
     }
@@ -97,8 +94,7 @@ public class PostgresUserDAO implements UserDAO {
                 map.put(res.getString(2), res.getInt(1));
 
             return map;
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return map;
         }
     }
@@ -115,8 +111,7 @@ public class PostgresUserDAO implements UserDAO {
             resSet.next();
 
             return resSet.getInt(1);
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return -1;
         }
     }
@@ -133,8 +128,7 @@ public class PostgresUserDAO implements UserDAO {
             res.next();
 
             return new User(userID, res.getString(1), res.getString(2));
-        } catch (SQLException e) {
-            //e.printStackTrace();
+        } catch (SQLException _) {
             return null;
         }
     }

@@ -46,7 +46,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
 
             return list.stream().toList();
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return list;
         }
     }
@@ -117,7 +117,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
 
             return 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return -1;
         }
     }
@@ -174,7 +174,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
 
             return board;
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -195,7 +195,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
 
             return 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return -1;
         }
     }
@@ -212,7 +212,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
 
             return new Noticeboard(boardID, res.getString(1), res.getString(2), res.getInt(3));
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }
@@ -239,7 +239,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
                 return resSet.getInt(1);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code) {
                 case VALUE_TOO_LONG_SQL_STATE -> { //username or password exceed 128 chars
@@ -276,7 +276,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target noticeboard (ID: " + board.getBoardID() + ") does not exist");
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code) {
                 case VALUE_TOO_LONG_SQL_STATE -> { //username or password exceed 128 chars
@@ -310,7 +310,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             String code = e.getSQLState();
             switch (code) {
                 case VALUE_TOO_LONG_SQL_STATE -> throw new IllegalArgumentException("The title cannot exceed 128 characters.");
@@ -339,7 +339,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             if(e.getSQLState().equals(VALUE_TOO_LONG_SQL_STATE))
                 throw new IllegalArgumentException("The description cannot exceed 256 characters.");
         }
@@ -357,7 +357,7 @@ public class PostgresNoticeboardDAO implements NoticeboardDAO {
             if(res == 0)
                 throw new NoSuchElementException("The target noticeboard (ID: " + boardID + ") does not exist");
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 }

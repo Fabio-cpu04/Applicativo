@@ -95,28 +95,36 @@ public class ToDoForm extends JDialog{
             activityURLField.setValue("");
             imageURLField.setValue("");
             expiryDateField.setValue("");
-            colorDisplay.setBackground(Color.decode("#B6B6B6")); //Hex for Color.GRAY.brighter()
+            colorDisplay.setBackground(Color.decode("#FFFFFF"));
             }
         else {
             this.todoID = sourceToDo.getToDoID();
             this.ownerUserID = sourceToDo.getOwnerUserID();
 
-            title = "Edit ToDo";
+            title = "Edit ToDo"; //Set form title
+            //Disable completion state label & radio buttons
             completionStateLabel.setVisible(false);
             completeRadioButton.setVisible(false);
             notCompleteRadioButton.setVisible(false);
+            //Enable the appropriate completion state radio button
             if (sourceToDo.isCompleted())
                 completeRadioButton.setSelected(true);
             else
                 notCompleteRadioButton.setSelected(true);
+
+            //Set all other ToDo fields values from sourceToDo
             titleField.setValue(sourceToDo.getTitle());
             descriptionField.setText(sourceToDo.getDescription());
             activityURLField.setValue(sourceToDo.getActivityURL());
             imageURLField.setValue(sourceToDo.getImageURL());
+
+            //Set date field by trying to parse sourceToDo's date or using "" if the date is null
             if(sourceToDo.getExpiryDate() != null)
                 expiryDateField.setValue(sourceToDo.getExpiryDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy kk:mm")));
             else
                 expiryDateField.setValue("");
+
+            //Set color display
             colorDisplay.setBackground(Color.decode(sourceToDo.getBackgroundColor()));
         }
 

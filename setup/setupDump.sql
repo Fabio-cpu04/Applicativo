@@ -54,7 +54,7 @@ CREATE TABLE ToDos
     imageURL character varying(2048) NOT NULL,
     expiryDate timestamp,
     ownerUserID integer REFERENCES Users(userID) ON DELETE CASCADE NOT NULL,   
-    backgroundColor character(7) NOT NULL DEFAULT '#B6B6B6', -- Default color is Color.GRAY.brighter()
+    backgroundColor character(7) NOT NULL DEFAULT '#FFFFFF',
 
     boardID integer REFERENCES Noticeboards(boardID) ON DELETE CASCADE NOT NULL,
     boardIndex integer NOT NULL,

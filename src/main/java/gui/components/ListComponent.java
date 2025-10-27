@@ -37,13 +37,26 @@ public class ListComponent {
 
     //Constructor
     /**
-     * <p>Instantiates a new ListComponent that displays the specified items.</p>
+     * <p>Instantiates a new ListComponent that is titled and displays the specified items.</p>
      * @param items the items, wrapped in a {@link List} of {@link String}
      */
-    public ListComponent(List<String> items) {
+    public ListComponent(List<String> items){
+        this(items, "");
+    }
+
+    /**
+     * <p>Instantiates a new ListComponent that is titled and displays the specified items.</p>
+     * @param title the title of the list's frame
+     * @param items the items, wrapped in a {@link List} of {@link String}
+     */
+    public ListComponent(List<String> items, String title) {
         //Create new JFrame
-        frame = new JFrame();
+        frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        Dimension minimumSize = Toolkit.getDefaultToolkit().getScreenSize();
+        minimumSize.setSize(minimumSize.getWidth() / 5, minimumSize.getHeight() / 8);
+        frame.setMinimumSize(minimumSize);
 
         //Create scrollpane and set its stuff
         JScrollPane scrollPane = new JScrollPane(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -65,14 +78,14 @@ public class ListComponent {
         mainPanel.add(list, new GridBagConstraints(0, 0, 1, 1, 0.5, 0.5, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
         list.setVisible(true);
 
-        this.reloadGUIComponent();
+        this.reloadListComponent();
     }
 
     //Methods
     /**
      * <p>Reloads the ListComponent.</p>
      */
-    public void reloadGUIComponent() {
+    public void reloadListComponent() {
         frame.pack();
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         frame.setLocation(screenSize.width / 2 - frame.getSize().width / 2, screenSize.height / 2 - frame.getSize().height / 2);

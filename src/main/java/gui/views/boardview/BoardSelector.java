@@ -62,8 +62,8 @@ import dto.NoticeboardDTO;
         Map<Integer, String> users = Controller.getInstance().getUsers();
         boards.forEach(board -> boardSelectorItemList.add(
                 board.getTitle() +
-                (board.getDescription().isEmpty() ? "/ ..." : " / " + board.getDescription()) +
-                ((board.getUserID() == userID) ? "" : " [" + users.get(board.getUserID()) + "]")
+                ((board.getUserID() == userID) ? "" : " [" + users.get(board.getUserID()) + "]") +
+                (board.getDescription().isEmpty() ? "/ ..." : " / " + board.getDescription())
         ));
 
         String originalTitle = parentBoardComponent.getBoard().getTitle();
